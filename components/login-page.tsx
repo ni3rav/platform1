@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,37 +11,37 @@ import { Input } from "@/components/ui/input";
 import { VALID_EMAIL_REGEX } from "@/lib/constants";
 import z from "zod";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export const loginSchema = z.object({
-  email: z
-    .email()
-    .regex(
-      VALID_EMAIL_REGEX,
-      "Email must assume the format: name.branch.id@adaniuni.ac.in",
-    ),
+  email: z.email().regex(VALID_EMAIL_REGEX),
 });
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!VALID_EMAIL_REGEX.test(email)) {
-      toast.error("Please enter a valid institute email");
-      return;
-    }
-    
+  const onSubmit = (data: z.infer<typeof loginSchema>) => {
+    // todo: the server action will go here
     toast.success("Login successful!");
+  };
+
+  const onError = () => {
+    toast.error("Please enter a valid institute email");
   };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit, onError)}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-xl font-bold">Welcome to Platform1</h1>
@@ -52,9 +52,7 @@ export function LoginForm({
               id="email"
               type="email"
               placeholder="Enter your institute email address"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
             />
           </Field>
           <Field>
