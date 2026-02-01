@@ -13,6 +13,7 @@ import z from "zod";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { generateOtp } from "@/actions/login";
 
 export const loginSchema = z.object({
   email: z.email().regex(VALID_EMAIL_REGEX),
@@ -25,13 +26,14 @@ export function LoginForm({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: {},
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = (data: z.infer<typeof loginSchema>) => {
     // todo: the server action will go here
+    generateOtp(data.email);
     toast.success("Login successful!");
   };
 
