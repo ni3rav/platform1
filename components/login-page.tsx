@@ -27,6 +27,7 @@ export function LoginForm({
     register,
     handleSubmit,
     formState: {},
+    formState: {},
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
@@ -34,7 +35,7 @@ export function LoginForm({
   const onSubmit = (data: z.infer<typeof loginSchema>) => {
     // todo: the server action will go here
     generateOtp(data.email);
-    toast.success("Login successful!");
+    toast.success("Please check your inbox for login link");
   };
 
   const onError = () => {
