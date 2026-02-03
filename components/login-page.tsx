@@ -32,10 +32,22 @@ export function LoginForm({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: z.infer<typeof loginSchema>) => {
-    // todo: the server action will go here
-    generateOtp(data.email);
-    toast.success("Please check your inbox for login link");
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    try {
+      await generateOtp(data.email);
+      toast.success("Please check your inbox for login link");
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("minutes before requesting another OTP")
+      ) {
+        toast.warning(error.message);
+      } else {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to send OTP",
+        );
+      }
+    }
   };
 
   const onError = () => {
