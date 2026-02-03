@@ -2,6 +2,7 @@
 import crypto from "node:crypto";
 import { redis } from "@/lib/redis";
 import { REDIS_OTP_TTL, VALID_EMAIL_REGEX } from "@/lib/constants";
+import { sendOtpEmail } from "@/lib/email";
 
 export async function generateOtp(email: string) {
   try {
@@ -15,9 +16,12 @@ export async function generateOtp(email: string) {
     await redis.set(`otp:${email}`, JSON.stringify({ hash: hashedOtp }), {
       ex: REDIS_OTP_TTL,
     });
+    
+    
 
-    // for now return otp as is, later integrate resend to send it via email
-    return { success: true, otp };
+    await sendOtpEmail(email, otp);
+    
+    return { success: true };
   } catch (error) {
     console.error("OTP error:", error);
     throw new Error("Failed to generate OTP");

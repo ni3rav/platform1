@@ -5,6 +5,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   UPSTASH_REDIS_REST_URL: z.string(),
   UPSTASH_REDIS_REST_TOKEN: z.string(),
+  RESEND_API_KEY: z.string(),
 });
 
 export const env = envSchema.parse(process.env);
