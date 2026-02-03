@@ -26,6 +26,7 @@ export function LoginForm({
   const {
     register,
     handleSubmit,
+    reset,
     formState: {},
     formState: {},
   } = useForm({
@@ -35,7 +36,8 @@ export function LoginForm({
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
       await generateOtp(data.email);
-      toast.success("Please check your inbox for login link");
+      toast.success("Please check your inbox for verification code");
+      reset(); // Clear the input field
     } catch (error) {
       if (
         error instanceof Error &&

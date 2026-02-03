@@ -5,3 +5,4 @@ export const VALID_EMAIL_REGEX = new RegExp(
 );
 export const REDIS_OTP_TTL = 300;
 export const RATE_LIMIT_TTL = 300; // 5 minutes
+export const ADMIN_EMAILS = ["niravmaheta.cse23@adaniuni.ac.in", "abhipatel.cse23@adaniuni.ac.in"];
