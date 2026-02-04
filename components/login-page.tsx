@@ -14,15 +14,17 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { generateOtp } from "@/actions/login";
+import { useRouter } from "next/navigation";
 
 export const loginSchema = z.object({
-  email: z.email().regex(VALID_EMAIL_REGEX),
+  email: z.email().regex(VALID_EMAIL_REGEX).transform(val => val.toLowerCase()),
 });
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -38,6 +40,7 @@ export function LoginForm({
       await generateOtp(data.email);
       toast.success("Please check your inbox for verification code");
       reset(); // Clear the input field
+      router.push(`/verify?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
       if (
         error instanceof Error &&

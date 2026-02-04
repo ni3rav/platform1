@@ -7,10 +7,8 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendOtpEmail(email: string, otp: string) {
   try {
-    const verificationLink = `${env.NEXT_PUBLIC_APP_BASE_URL}/verify?email=${encodeURIComponent(email)}&otp=${otp}`;
-    
     const emailHtml = await render(EmailTemplate({ 
-      link: verificationLink, 
+      otp, 
       email 
     }));
 

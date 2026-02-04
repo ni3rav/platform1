@@ -29,11 +29,11 @@ export async function generateOtp(email: string) {
       );
     }
 
-    const otp = crypto.randomInt(1_000_000, 10_000_000).toString();
+    const otp = crypto.randomInt(100_000, 1_000_000).toString();
 
     const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
     
-    console.log("Storing OTP hash for email:", email);
+    console.log("Storing hashed OTP for email:", email);
 
     await redis.set(`otp:${email}`, hashedOtp, {
       ex: REDIS_OTP_TTL,
@@ -64,7 +64,7 @@ export async function verifyOtp(email: string, otp: string) {
     if (storedHash !== otpHash) {
       throw new Error("Invalid OTP");
     }
-
+    
     // jwt generation
     const user: User = {
       email,
