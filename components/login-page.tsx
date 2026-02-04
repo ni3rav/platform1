@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { generateOtp } from "@/actions/login";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 export const loginSchema = z.object({
   email: z.email().regex(VALID_EMAIL_REGEX).transform(val => val.toLowerCase()),
@@ -29,8 +30,7 @@ export function LoginForm({
     register,
     handleSubmit,
     reset,
-    formState: {},
-    formState: {},
+    formState: { isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
@@ -76,7 +76,10 @@ export function LoginForm({
             />
           </Field>
           <Field>
-            <Button type="submit">Login</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Spinner className="mr-2 size-4" />}
+              {isSubmitting ? "Sending OTP..." : "Login"}
+            </Button>
           </Field>
         </FieldGroup>
       </form>

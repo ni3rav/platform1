@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { verifyOtp } from "@/actions/login";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,13 +33,12 @@ function VerifyContent() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(otpSchema),
   });
 
-  const otpValue = watch("otp");
+  const [otpValue, setOtpValue] = useState("");
 
   if (!email) {
     toast.error("Invalid verification request");
@@ -65,6 +64,7 @@ function VerifyContent() {
   };
 
   const handleOtpChange = (value: string) => {
+    setOtpValue(value);
     setValue("otp", value);
   };
 
@@ -87,6 +87,7 @@ function VerifyContent() {
                   maxLength={6} 
                   value={otpValue}
                   onChange={handleOtpChange}
+                  disabled={isSubmitting}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
@@ -110,7 +111,7 @@ function VerifyContent() {
             </Field>
             
             <Field>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || otpValue?.length !== 6}>
                 {isSubmitting ? "Verifying..." : "Verify"}
               </Button>
             </Field>
