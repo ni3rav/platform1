@@ -47,19 +47,15 @@ function VerifyContent() {
   }
 
   const onSubmit = async (data: z.infer<typeof otpSchema>) => {
-    try {
-      const result = await verifyOtp(email, data.otp);
-      
-      if (result.success) {
-        toast.success("Login successful!");
-        setTimeout(() => {
-          router.push("/");
-        }, 1000);
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to verify OTP",
-      );
+    const result = await verifyOtp(email, data.otp);
+    
+    if (result.success) {
+      toast.success("Login successful!");
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+    } else {
+      toast.error(result.error || "Failed to verify OTP");
     }
   };
 

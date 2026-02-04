@@ -36,21 +36,17 @@ export function LoginForm({
   });
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
-    try {
-      await generateOtp(data.email);
+    const result = await generateOtp(data.email);
+    
+    if (result.success) {
       toast.success("Please check your inbox for verification code");
       reset(); // Clear the input field
       router.push(`/verify?email=${encodeURIComponent(data.email)}`);
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("minutes before requesting another OTP")
-      ) {
-        toast.warning(error.message);
+    } else {
+      if (result.error?.includes("minutes before requesting another OTP")) {
+        toast.warning(result.error);
       } else {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to send OTP",
-        );
+        toast.error(result.error || "Failed to send OTP");
       }
     }
   };

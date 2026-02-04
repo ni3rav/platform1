@@ -12,10 +12,10 @@ import { signToken, User } from "@/lib/jwt";
 import { cookies } from "next/headers";
 import { IS_PRODUCTION } from "@/lib/env";
 
-export async function generateOtp(email: string) {
+export async function generateOtp(email: string): Promise<{ success: boolean; error?: string }> {
   try {
     if (!email || !VALID_EMAIL_REGEX.test(email)) {
-      throw new Error("Please enter a valid institute email");
+      return { success: false, error: "Please enter a valid institute email" };
     }
 
     // Check rate limit
@@ -24,9 +24,10 @@ export async function generateOtp(email: string) {
 
     if (isRateLimited) {
       const ttl = await redis.ttl(rateLimitKey);
-      throw new Error(
-        `Wait ${Math.ceil(ttl / 60)} minutes before requesting another OTP`,
-      );
+      return { 
+        success: false, 
+        error: `Wait ${Math.ceil(ttl / 60)} minutes before requesting another OTP` 
+      };
     }
 
     const otp = crypto.randomInt(100_000, 1_000_000).toString();
@@ -47,22 +48,22 @@ export async function generateOtp(email: string) {
     return { success: true };
   } catch (error) {
     console.error("OTP error:", error);
-    throw error;
+    return { success: false, error: "Failed to send OTP. Please try again." };
   }
 }
 
-export async function verifyOtp(email: string, otp: string) {
+export async function verifyOtp(email: string, otp: string): Promise<{ success: boolean; error?: string }> {
   try {
     const storedHash = await redis.get(`otp:${email}`);
     if (!storedHash) {
-      throw new Error("OTP not found or expired");
+      return { success: false, error: "OTP not found or expired" };
     }
     
     console.log("Stored hash found for email:", email);
     
     const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
     if (storedHash !== otpHash) {
-      throw new Error("Invalid OTP");
+      return { success: false, error: "Invalid OTP" };
     }
     
     // jwt generation
@@ -87,6 +88,6 @@ export async function verifyOtp(email: string, otp: string) {
     return { success: true };
   } catch (error) {
     console.error("OTP verification error:", error);
-    throw error;
+    return { success: false, error: "Failed to verify OTP. Please try again." };
   }
 }
