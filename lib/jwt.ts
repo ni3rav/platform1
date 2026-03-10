@@ -7,7 +7,7 @@ export interface User {
   role: "admin" | "user";
 } 
 
-interface TokenPayload extends JwtPayload {
+export interface TokenPayload extends JwtPayload {
   email: string;
   role: "admin" | "user";
 }
