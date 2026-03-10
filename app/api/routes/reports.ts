@@ -15,8 +15,11 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
   // Submit a report (auth required)
   .post(
     "/",
-    async ({ body, auth }) => {
-      if (!auth) return { error: "Unauthorized" };
+    async ({ body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
 
       const [error, rows] = await tryCatch(() =>
         db
@@ -26,10 +29,14 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
             targetId: body.targetId,
             reason: body.reason,
           })
-          .returning()
+          .returning(),
       );
 
-      if (error || !rows) return { error: "Failed to submit report" };
+      if (error || !rows) {
+        set.status = 500;
+        return { error: "Failed to submit report" };
+      }
+      set.status = 201;
       return rows[0];
     },
     {
@@ -38,14 +45,21 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
         targetId: t.String(),
         reason: t.String({ minLength: 1, maxLength: 1000 }),
       }),
-    }
+    },
   )
 
   // List reports (admin only)
   .get(
     "/",
-    async ({ query, auth }) => {
-      if (!auth || auth.role !== "admin") return { error: "Forbidden" };
+    async ({ query, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      if (auth.role !== "admin") {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
 
       const status =
         (query.status as "pending" | "resolved" | "rejected") || "pending";
@@ -55,24 +69,34 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
           .select()
           .from(reports)
           .where(eq(reports.status, status))
-          .orderBy(reports.createdAt)
+          .orderBy(reports.createdAt),
       );
 
-      if (error || !results) return { error: "Failed to fetch reports" };
+      if (error || !results) {
+        set.status = 500;
+        return { error: "Failed to fetch reports" };
+      }
       return results;
     },
     {
       query: t.Object({
         status: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
   // Resolve/reject a report (admin only)
   .patch(
     "/:id",
-    async ({ params, body, auth }) => {
-      if (!auth || auth.role !== "admin") return { error: "Forbidden" };
+    async ({ params, body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      if (auth.role !== "admin") {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
 
       const action = body.action as "resolve" | "reject";
 
@@ -121,14 +145,17 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
             .returning();
 
           return result;
-        })
+        }),
       );
 
-      if (error || !updated) return { error: "Failed to process report" };
+      if (error || !updated) {
+        set.status = error === "Report not found" ? 404 : 500;
+        return { error: error || "Failed to process report" };
+      }
       return updated;
     },
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({ action: t.String() }),
-    }
+    },
   );

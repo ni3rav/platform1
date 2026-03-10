@@ -14,16 +14,19 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
   // Get comments for a post (public, auth optional for vote state)
   .get(
     "/post/:postId",
-    async ({ params, auth }) => {
+    async ({ params, auth, set }) => {
       const [error, results] = await tryCatch(() =>
         db
           .select()
           .from(comments)
           .where(eq(comments.postId, params.postId))
-          .orderBy(asc(comments.createdAt))
+          .orderBy(asc(comments.createdAt)),
       );
 
-      if (error || !results) return { error: "Failed to fetch comments" };
+      if (error || !results) {
+        set.status = 500;
+        return { error: "Failed to fetch comments" };
+      }
 
       let userVotes: Record<string, number> = {};
       if (auth && results.length > 0) {
@@ -38,9 +41,9 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
             .where(
               sql`${commentVotes.commentId} IN (${sql.join(
                 commentIds.map((id) => sql`${id}`),
-                sql`, `
-              )}) AND ${commentVotes.voterHash} = ${auth.voterHash}`
-            )
+                sql`, `,
+              )}) AND ${commentVotes.voterHash} = ${auth.voterHash}`,
+            ),
         );
         if (votes) {
           for (const v of votes) {
@@ -56,14 +59,17 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
     },
     {
       params: t.Object({ postId: t.String() }),
-    }
+    },
   )
 
   // Create comment (auth required)
   .post(
     "/",
-    async ({ body, auth }) => {
-      if (!auth) return { error: "Unauthorized" };
+    async ({ body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
 
       const [error, newComment] = await tryCatch(() =>
         db.transaction(async (tx) => {
@@ -83,10 +89,14 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
             .where(eq(posts.id, body.postId));
 
           return created;
-        })
+        }),
       );
 
-      if (error || !newComment) return { error: "Failed to create comment" };
+      if (error || !newComment) {
+        set.status = 500;
+        return { error: "Failed to create comment" };
+      }
+      set.status = 201;
       return newComment;
     },
     {
@@ -95,14 +105,21 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         parentId: t.Optional(t.String()),
         body: t.String({ minLength: 1, maxLength: 5000 }),
       }),
-    }
+    },
   )
 
   // Delete comment (admin only)
   .delete(
     "/:id",
-    async ({ params, auth }) => {
-      if (!auth || auth.role !== "admin") return { error: "Forbidden" };
+    async ({ params, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      if (auth.role !== "admin") {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
 
       const [error] = await tryCatch(() =>
         db.transaction(async (tx) => {
@@ -122,13 +139,16 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
               commentCount: sql`GREATEST(${posts.commentCount} - 1, 0)`,
             })
             .where(eq(posts.id, comment.postId));
-        })
+        }),
       );
 
-      if (error) return { error };
+      if (error) {
+        set.status = error === "Comment not found" ? 404 : 500;
+        return { error };
+      }
       return { success: true };
     },
     {
       params: t.Object({ id: t.String() }),
-    }
+    },
   );

@@ -21,7 +21,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   // List posts (public, auth optional for vote state)
   .get(
     "/",
-    async ({ query, auth }) => {
+    async ({ query, auth, set }) => {
       const board = query.board as (typeof boardValues)[number] | undefined;
       const sort = (query.sort as "hot" | "top" | "new") || "hot";
       const page = parseInt(query.page || "1");
@@ -39,7 +39,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         case "hot":
         default:
           orderBy = desc(
-            sql`${posts.score} / POWER(GREATEST(EXTRACT(EPOCH FROM (NOW() - ${posts.createdAt})) / 3600, 1), 1.5)`
+            sql`${posts.score} / POWER(GREATEST(EXTRACT(EPOCH FROM (NOW() - ${posts.createdAt})) / 3600, 1), 1.5)`,
           );
           break;
       }
@@ -53,10 +53,13 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
           .where(conditions)
           .orderBy(orderBy)
           .limit(limit)
-          .offset(offset)
+          .offset(offset),
       );
 
-      if (error || !results) return { error: "Failed to fetch posts" };
+      if (error || !results) {
+        set.status = 500;
+        return { error: "Failed to fetch posts" };
+      }
 
       let userVotes: Record<string, number> = {};
       if (auth?.voterHash && results.length > 0) {
@@ -68,9 +71,9 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
             .where(
               sql`${postVotes.postId} IN (${sql.join(
                 postIds.map((id) => sql`${id}`),
-                sql`, `
-              )}) AND ${postVotes.voterHash} = ${auth!.voterHash}`
-            )
+                sql`, `,
+              )}) AND ${postVotes.voterHash} = ${auth!.voterHash}`,
+            ),
         );
         if (votes) {
           for (const v of votes) {
@@ -95,18 +98,19 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
-  // Get single post (public, auth optional for vote state)
+  // Get single post
   .get(
     "/:id",
-    async ({ params, auth }) => {
+    async ({ params, auth, set }) => {
       const [error, result] = await tryCatch(() =>
-        db.select().from(posts).where(eq(posts.id, params.id)).limit(1)
+        db.select().from(posts).where(eq(posts.id, params.id)).limit(1),
       );
 
       if (error || !result || result.length === 0) {
+        set.status = 404;
         return { error: "Post not found" };
       }
 
@@ -117,9 +121,9 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
             .select({ value: postVotes.value })
             .from(postVotes)
             .where(
-              sql`${postVotes.postId} = ${params.id} AND ${postVotes.voterHash} = ${auth.voterHash}`
+              sql`${postVotes.postId} = ${params.id} AND ${postVotes.voterHash} = ${auth.voterHash}`,
             )
-            .limit(1)
+            .limit(1),
         );
         userVote = vote?.[0]?.value ?? 0;
       }
@@ -128,14 +132,17 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     },
     {
       params: t.Object({ id: t.String() }),
-    }
+    },
   )
 
   // Create post (auth required)
   .post(
     "/",
-    async ({ body, auth }) => {
-      if (!auth) return { error: "Unauthorized" };
+    async ({ body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
 
       const [error, rows] = await tryCatch(() =>
         db
@@ -146,10 +153,15 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
             body: body.body,
             isAdminPost: auth.role === "admin",
           })
-          .returning()
+          .returning(),
       );
 
-      if (error || !rows) return { error: "Failed to create post" };
+      if (error || !rows) {
+        console.error(error);
+        set.status = 500;
+        return { error: "Failed to create post" };
+      }
+      set.status = 201;
       return rows[0];
     },
     {
@@ -158,23 +170,33 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         title: t.String({ minLength: 1, maxLength: 300 }),
         body: t.String({ minLength: 1, maxLength: 10000 }),
       }),
-    }
+    },
   )
 
   // Delete post (admin only)
   .delete(
     "/:id",
-    async ({ params, auth }) => {
-      if (!auth || auth.role !== "admin") return { error: "Forbidden" };
+    async ({ params, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      if (auth.role !== "admin") {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
 
       const [error] = await tryCatch(() =>
-        db.delete(posts).where(eq(posts.id, params.id))
+        db.delete(posts).where(eq(posts.id, params.id)),
       );
 
-      if (error) return { error: "Failed to delete post" };
+      if (error) {
+        set.status = 500;
+        return { error: "Failed to delete post" };
+      }
       return { success: true };
     },
     {
       params: t.Object({ id: t.String() }),
-    }
+    },
   );

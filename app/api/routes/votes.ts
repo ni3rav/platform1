@@ -7,21 +7,19 @@ import { extractAuth, type ApiAuth } from "@/lib/auth-api";
 import { tryCatch } from "@/lib/utils";
 
 export const voteRoutes = new Elysia({ prefix: "/votes" })
-  .derive(({ headers }) => {
-    const auth = extractAuth(headers["cookie"]);
-    if (!auth) throw new Error("Unauthorized");
-    return { auth: auth as ApiAuth };
-  })
-  .onError(({ error }) => {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return { error: "Unauthorized" };
-    }
-  })
+  .derive(({ headers }) => ({
+    auth: extractAuth(headers["cookie"]),
+  }))
 
   // Vote on a post: value = 1 (up), -1 (down), 0 (remove)
   .post(
     "/post/:id",
-    async ({ params, body, auth }) => {
+    async ({ params, body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
       const { value } = body;
       const postId = params.id;
       const { voterHash } = auth;
@@ -34,8 +32,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
             .where(
               and(
                 eq(postVotes.postId, postId),
-                eq(postVotes.voterHash, voterHash)
-              )
+                eq(postVotes.voterHash, voterHash),
+              ),
             )
             .limit(1);
 
@@ -48,8 +46,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
               .where(
                 and(
                   eq(postVotes.postId, postId),
-                  eq(postVotes.voterHash, voterHash)
-                )
+                  eq(postVotes.voterHash, voterHash),
+                ),
               );
           } else if (value !== 0 && existing.length > 0) {
             await tx
@@ -58,8 +56,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
               .where(
                 and(
                   eq(postVotes.postId, postId),
-                  eq(postVotes.voterHash, voterHash)
-                )
+                  eq(postVotes.voterHash, voterHash),
+                ),
               );
           } else if (value !== 0) {
             await tx.insert(postVotes).values({ postId, voterHash, value });
@@ -85,22 +83,30 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
             .where(eq(posts.id, postId));
 
           return { score: updated?.score ?? 0, userVote: value };
-        })
+        }),
       );
 
-      if (error || !result) return { error: "Failed to vote" };
+      if (error || !result) {
+        set.status = 500;
+        return { error: "Failed to vote" };
+      }
       return result;
     },
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({ value: t.Number({ minimum: -1, maximum: 1 }) }),
-    }
+    },
   )
 
   // Vote on a comment
   .post(
     "/comment/:id",
-    async ({ params, body, auth }) => {
+    async ({ params, body, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
       const { value } = body;
       const commentId = params.id;
       const { voterHash } = auth;
@@ -113,8 +119,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
             .where(
               and(
                 eq(commentVotes.commentId, commentId),
-                eq(commentVotes.voterHash, voterHash)
-              )
+                eq(commentVotes.voterHash, voterHash),
+              ),
             )
             .limit(1);
 
@@ -127,8 +133,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
               .where(
                 and(
                   eq(commentVotes.commentId, commentId),
-                  eq(commentVotes.voterHash, voterHash)
-                )
+                  eq(commentVotes.voterHash, voterHash),
+                ),
               );
           } else if (value !== 0 && existing.length > 0) {
             await tx
@@ -137,8 +143,8 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
               .where(
                 and(
                   eq(commentVotes.commentId, commentId),
-                  eq(commentVotes.voterHash, voterHash)
-                )
+                  eq(commentVotes.voterHash, voterHash),
+                ),
               );
           } else if (value !== 0) {
             await tx
@@ -166,14 +172,17 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
             .where(eq(comments.id, commentId));
 
           return { score: updated?.score ?? 0, userVote: value };
-        })
+        }),
       );
 
-      if (error || !result) return { error: "Failed to vote" };
+      if (error || !result) {
+        set.status = 500;
+        return { error: "Failed to vote" };
+      }
       return result;
     },
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({ value: t.Number({ minimum: -1, maximum: 1 }) }),
-    }
+    },
   );
