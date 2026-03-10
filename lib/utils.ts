@@ -8,10 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 export const tryCatch = async <T>(
   fn: () => T,
   errorHandler?: (error: unknown) => string
-): Promise<[error: null, data: T] | [error: string, data: null]> => {
+): Promise<[error: null, data: Awaited<T>] | [error: string, data: null]> => {
   try {
     const data = await fn();
-    return [null, data];
+    return [null, data as Awaited<T>];
   } catch (error) {
     const message = errorHandler
       ? errorHandler(error)

@@ -1,8 +1,16 @@
 import { Elysia, t } from "elysia";
 import { verifyRoutes } from "@/app/api/routes/verify";
+import { postRoutes } from "@/app/api/routes/posts";
+import { voteRoutes } from "@/app/api/routes/votes";
+import { commentRoutes } from "@/app/api/routes/comments";
+import { reportRoutes } from "@/app/api/routes/reports";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(verifyRoutes)
+  .use(postRoutes)
+  .use(voteRoutes)
+  .use(commentRoutes)
+  .use(reportRoutes)
   .get("/", "Hello Nextjs")
   .post("/", ({ body }) => body, {
     body: t.Object({
