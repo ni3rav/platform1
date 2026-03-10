@@ -41,6 +41,8 @@
         "@types/pg": "^8.18.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "ajv": "^8",
+        "ajv-formats": "^3.0.1",
         "bun-types": "^1.3.10",
         "drizzle-kit": "^0.31.9",
         "eslint": "^10.0.3",
@@ -1760,8 +1762,6 @@
 
     "@typescript-eslint/visitor-keys/eslint-visitor-keys": ["eslint-visitor-keys@4.2.1", "", {}, ""],
 
-    "body-parser/iconv-lite": ["iconv-lite@0.7.2", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, ""],
-
     "cliui/string-width": ["string-width@4.2.3", "", { "dependencies": { "emoji-regex": "^8.0.0", "is-fullwidth-code-point": "^3.0.0", "strip-ansi": "^6.0.1" } }, ""],
 
     "cliui/strip-ansi": ["strip-ansi@6.0.1", "", { "dependencies": { "ansi-regex": "^5.0.1" } }, ""],
@@ -1782,15 +1782,9 @@
 
     "eslint-plugin-react/semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, ""],
 
-    "eslint-plugin-react-hooks/zod": ["zod@4.3.6", "", {}, ""],
-
     "express/cookie": ["cookie@0.7.2", "", {}, ""],
 
     "fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, ""],
-
-    "is-bun-module/semver": ["semver@7.7.3", "", { "bin": "bin/semver.js" }, ""],
-
-    "log-symbols/chalk": ["chalk@5.6.2", "", {}, ""],
 
     "log-symbols/is-unicode-supported": ["is-unicode-supported@1.3.0", "", {}, ""],
 
@@ -1810,11 +1804,7 @@
 
     "shadcn/zod": ["zod@3.25.76", "", {}, ""],
 
-    "sharp/semver": ["semver@7.7.3", "", { "bin": "bin/semver.js" }, ""],
-
     "string-width/emoji-regex": ["emoji-regex@10.6.0", "", {}, ""],
-
-    "tsconfig-paths/json5": ["json5@2.2.3", "", { "bin": "lib/cli.js" }, ""],
 
     "wrap-ansi/string-width": ["string-width@4.2.3", "", { "dependencies": { "emoji-regex": "^8.0.0", "is-fullwidth-code-point": "^3.0.0", "strip-ansi": "^6.0.1" } }, ""],
 
@@ -1838,8 +1828,6 @@
 
     "@neondatabase/serverless/@types/node/undici-types": ["undici-types@6.21.0", "", {}, ""],
 
-    "@neondatabase/serverless/@types/pg/@types/node": ["@types/node@22.19.7", "", { "dependencies": { "undici-types": "~6.21.0" } }, ""],
-
     "@next/eslint-plugin-next/fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, ""],
 
     "cliui/string-width/emoji-regex": ["emoji-regex@8.0.0", "", {}, ""],
@@ -1855,8 +1843,6 @@
     "yargs/string-width/emoji-regex": ["emoji-regex@8.0.0", "", {}, ""],
 
     "yargs/string-width/strip-ansi": ["strip-ansi@6.0.1", "", { "dependencies": { "ansi-regex": "^5.0.1" } }, ""],
-
-    "@neondatabase/serverless/@types/pg/@types/node/undici-types": ["undici-types@6.21.0", "", {}, ""],
 
     "yargs/string-width/strip-ansi/ansi-regex": ["ansi-regex@5.0.1", "", {}, ""],
   }
