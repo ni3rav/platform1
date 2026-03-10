@@ -1,26 +1,12 @@
 import { Elysia, t } from "elysia";
-import { verifyToken, type TokenPayload } from "@/lib/jwt";
+import { verifyRoutes } from "@/app/api/routes/verify";
 
 export const app = new Elysia({ prefix: "/api" })
+  .use(verifyRoutes)
   .get("/", "Hello Nextjs")
   .post("/", ({ body }) => body, {
     body: t.Object({
       name: t.String(),
-    }),
-  })
-  .post("/verify", ({ body }) => {
-    const { token } = body as { token: string };
-    if (!token) {
-      return { valid: false, error: "No token provided" };
-    }
-    const payload = verifyToken(token);
-    if (!payload) {
-      return { valid: false, error: "Invalid token" };
-    }
-    return { valid: true, payload: payload as TokenPayload };
-  }, {
-    body: t.Object({
-      token: t.String(),
     }),
   });
 

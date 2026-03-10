@@ -68,7 +68,6 @@ export async function verifyOtp(email: string, otp: string): Promise<{ success: 
     
     // jwt generation
     const user: User = {
-      email,
       role: ADMIN_EMAILS.includes(email) ? "admin" : "user",
     };
     const token = signToken(user);
