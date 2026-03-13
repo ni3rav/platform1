@@ -6,6 +6,7 @@ import { VoteButton } from "@/components/vote-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { CommentForm } from "@/components/comment-form";
 import { ReportButton } from "@/components/report-button";
+import { AdminCommentDeleteButton } from "@/components/admin-comment-delete-button";
 
 interface Comment {
   id: string;
@@ -22,6 +23,7 @@ interface CommentThreadProps extends React.ComponentProps<"div"> {
   comments: Comment[];
   postId: string;
   isAuthenticated: boolean;
+  isAdmin?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -78,11 +80,13 @@ function CommentNode({
   tree,
   postId,
   isAuthenticated,
+  isAdmin,
 }: {
   comment: Comment;
   tree: Map<string | null, Comment[]>;
   postId: string;
   isAuthenticated: boolean;
+  isAdmin?: boolean;
 }) {
   const children = tree.get(comment.id) || [];
   const [isExpanded, setIsExpanded] = useState(true);
@@ -173,6 +177,7 @@ function CommentNode({
               targetId={comment.id}
               isAuthenticated={isAuthenticated}
             />
+            {isAdmin && <AdminCommentDeleteButton commentId={comment.id} />}
           </div>
 
           {showReply && (
@@ -199,6 +204,7 @@ function CommentNode({
               tree={tree}
               postId={postId}
               isAuthenticated={isAuthenticated}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
@@ -211,6 +217,7 @@ export function CommentThread({
   comments,
   postId,
   isAuthenticated,
+  isAdmin = false,
   className,
   ...props
 }: CommentThreadProps) {
@@ -243,6 +250,7 @@ export function CommentThread({
           tree={tree}
           postId={postId}
           isAuthenticated={isAuthenticated}
+          isAdmin={isAdmin}
         />
       ))}
     </div>

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { reports } from "@/db/schema/reports";
 import { posts } from "@/db/schema/posts";
 import { comments } from "@/db/schema/comments";
-import { eq, sql, and, isNull } from "drizzle-orm";
+import { eq, sql, and, isNull, inArray } from "drizzle-orm";
 import { extractAuth } from "@/lib/auth-api";
 import { tryCatch } from "@/lib/utils";
 
@@ -283,26 +283,63 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
                 .set({ deletedAt: new Date() })
                 .where(and(eq(posts.id, report.targetId), isNull(posts.deletedAt)));
             } else {
-              const [comment] = await tx
-                .select({ postId: comments.postId, deletedAt: comments.deletedAt })
+              const [target] = await tx
+                .select({ id: comments.id, postId: comments.postId })
                 .from(comments)
                 .where(eq(comments.id, report.targetId))
                 .limit(1);
 
-              if (comment && !comment.deletedAt) {
+              if (target) {
+                const allPostComments = await tx
+                  .select({
+                    id: comments.id,
+                    parentId: comments.parentId,
+                    deletedAt: comments.deletedAt,
+                  })
+                  .from(comments)
+                  .where(eq(comments.postId, target.postId));
+
+                const childMap = new Map<string, string[]>();
+                const rowMap = new Map(
+                  allPostComments.map((row) => [row.id, row] as const),
+                );
+
+                for (const row of allPostComments) {
+                  if (!row.parentId) continue;
+                  const list = childMap.get(row.parentId) ?? [];
+                  list.push(row.id);
+                  childMap.set(row.parentId, list);
+                }
+
+                const stack = [target.id];
+                const subtreeIds: string[] = [];
+                while (stack.length > 0) {
+                  const id = stack.pop()!;
+                  subtreeIds.push(id);
+                  const children = childMap.get(id);
+                  if (children?.length) {
+                    for (const childId of children) stack.push(childId);
+                  }
+                }
+
+                const activeIds = subtreeIds.filter((id) => !rowMap.get(id)?.deletedAt);
+                if (activeIds.length === 0) {
+                  return;
+                }
+
                 await tx
                   .update(comments)
                   .set({ deletedAt: new Date() })
                   .where(
-                    and(eq(comments.id, report.targetId), isNull(comments.deletedAt)),
+                    and(inArray(comments.id, activeIds), isNull(comments.deletedAt)),
                   );
 
                 await tx
                   .update(posts)
                   .set({
-                    commentCount: sql`GREATEST(${posts.commentCount} - 1, 0)`,
+                    commentCount: sql`GREATEST(${posts.commentCount} - ${activeIds.length}, 0)`,
                   })
-                  .where(eq(posts.id, comment.postId));
+                  .where(eq(posts.id, target.postId));
               }
             }
           }

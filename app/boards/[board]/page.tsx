@@ -7,7 +7,6 @@ import { SortTabs } from "@/components/sort-tabs";
 import { BoardsHeaderActions } from "@/components/boards-header-actions";
 import { BoardComposeBar } from "@/components/board-compose-bar";
 import { getAuthUser } from "@/lib/auth";
-import { Spinner } from "@/components/ui/spinner";
 
 const VALID_BOARDS = ["random", "confessions", "rant", "knowledge", "hangout"];
 
@@ -163,8 +162,25 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
 
             <Suspense
               fallback={
-                <div className="flex justify-center py-12">
-                  <Spinner className="size-5" />
+                <div className="space-y-2 py-2">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-3 rounded-lg border bg-card p-4"
+                    >
+                      <div className="w-8 shrink-0 space-y-1.5">
+                        <div className="h-6 rounded-md bg-muted/20 animate-pulse" />
+                        <div className="h-4 rounded-md bg-muted/20 animate-pulse" />
+                        <div className="h-6 rounded-md bg-muted/20 animate-pulse" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="h-4 w-2/3 rounded-md bg-muted/20 animate-pulse" />
+                        <div className="h-3 w-full rounded-md bg-muted/20 animate-pulse" />
+                        <div className="h-3 w-5/6 rounded-md bg-muted/20 animate-pulse" />
+                        <div className="h-3 w-1/3 rounded-md bg-muted/20 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               }
             >

@@ -187,6 +187,10 @@ export function CreatePostForm({
         board: defaultBoard || boardValue || "",
       });
       onSuccess?.();
+      if (result?.id && result?.board) {
+        router.push(`/boards/${result.board}/post/${result.id}`);
+        return;
+      }
       router.refresh();
     } catch {
       toast.error("Failed to create post");

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { VoteButton } from "@/components/vote-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -8,8 +7,8 @@ import { CommentForm } from "@/components/comment-form";
 import { CommentThread } from "@/components/comment-thread";
 import { ReportButton } from "@/components/report-button";
 import { SharePostButton } from "@/components/share-post-button";
+import { AdminPostDeleteButton } from "@/components/admin-post-delete-button";
 import { getAuthUser } from "@/lib/auth";
-import { Spinner } from "@/components/ui/spinner";
 
 const BOARD_META: Record<string, { label: string; emoji: string }> = {
   random: { label: "Random", emoji: "🎲" },
@@ -32,36 +31,16 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-async function CommentsSection({
-  postId,
-  isAuthenticated,
-}: {
-  postId: string;
-  isAuthenticated: boolean;
-}) {
+async function fetchComments(postId: string) {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/comments/post/${postId}`, {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    return (
-      <p className="py-4 text-center text-sm text-muted-foreground">
-        Failed to load comments
-      </p>
-    );
-  }
-
+  if (!res.ok) return null;
   const comments = await res.json();
-
-  return (
-    <CommentThread
-      comments={comments}
-      postId={postId}
-      isAuthenticated={isAuthenticated}
-    />
-  );
+  return Array.isArray(comments) ? comments : null;
 }
 
 export default async function PostDetailPage({ params }: PageProps) {
@@ -82,6 +61,8 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   const auth = await getAuthUser();
   const postPath = `/boards/${board}/post/${id}`;
+  const comments = await fetchComments(id);
+  const visibleCommentCount = comments ? comments.length : post.commentCount;
 
   return (
     <main className="min-h-dvh bg-background">
@@ -166,11 +147,12 @@ export default async function PostDetailPage({ params }: PageProps) {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                   <span>
-                    {post.commentCount}{" "}
-                    {post.commentCount === 1 ? "comment" : "comments"}
+                    {visibleCommentCount}{" "}
+                    {visibleCommentCount === 1 ? "comment" : "comments"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
+                  {auth.role === "admin" && <AdminPostDeleteButton postId={post.id} />}
                   <SharePostButton title={post.title} />
                   <ReportButton
                     targetType="post"
@@ -206,18 +188,18 @@ export default async function PostDetailPage({ params }: PageProps) {
           )}
 
           {/* Comments Thread */}
-          <Suspense
-            fallback={
-              <div className="flex justify-center py-8">
-                <Spinner className="size-5" />
-              </div>
-            }
-          >
-            <CommentsSection
+          {comments ? (
+            <CommentThread
+              comments={comments}
               postId={id}
               isAuthenticated={auth.isAuthenticated}
+              isAdmin={auth.role === "admin"}
             />
-          </Suspense>
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Failed to load comments
+            </p>
+          )}
         </section>
       </div>
     </main>
