@@ -7,6 +7,7 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { CommentForm } from "@/components/comment-form";
 import { CommentThread } from "@/components/comment-thread";
 import { ReportButton } from "@/components/report-button";
+import { SharePostButton } from "@/components/share-post-button";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -121,6 +122,7 @@ export default async function PostDetailPage({ params }: PageProps) {
               targetId={post.id}
               initialScore={post.score}
               initialUserVote={post.userVote ?? 0}
+              isAuthenticated={auth.isAuthenticated}
             />
 
             <div className="min-w-0 flex-1 space-y-3">
@@ -167,9 +169,14 @@ export default async function PostDetailPage({ params }: PageProps) {
                     {post.commentCount === 1 ? "comment" : "comments"}
                   </span>
                 </div>
-                {auth.isAuthenticated && (
-                  <ReportButton targetType="post" targetId={post.id} />
-                )}
+                <div className="flex items-center gap-1">
+                  <SharePostButton title={post.title} />
+                  <ReportButton
+                    targetType="post"
+                    targetId={post.id}
+                    isAuthenticated={auth.isAuthenticated}
+                  />
+                </div>
               </div>
             </div>
           </div>

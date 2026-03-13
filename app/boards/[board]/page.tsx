@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PostCard } from "@/components/post-card";
 import { CreatePostForm } from "@/components/create-post-form";
@@ -99,6 +99,9 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
   if (!VALID_BOARDS.includes(board)) notFound();
 
   const auth = await getAuthUser();
+  if (!auth.isAuthenticated) {
+    redirect("/login");
+  }
   const meta = BOARD_META[board];
 
   return (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/auth";
 import { BoardsHeaderActions } from "@/components/boards-header-actions";
 
@@ -37,6 +38,9 @@ const BOARDS = [
 
 export default async function BoardsPage() {
   const auth = await getAuthUser();
+  if (!auth.isAuthenticated) {
+    redirect("/login");
+  }
 
   return (
     <main className="min-h-dvh bg-background">
@@ -90,19 +94,6 @@ export default async function BoardsPage() {
           ))}
         </nav>
 
-        {!auth.isAuthenticated && (
-          <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Login to create posts and vote
-            </p>
-            <Link
-              href="/login"
-              className="mt-1 inline-block text-sm text-primary underline underline-offset-2 transition-colors hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              Login with institute email →
-            </Link>
-          </div>
-        )}
       </div>
     </main>
   );

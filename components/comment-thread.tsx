@@ -100,6 +100,7 @@ function CommentNode({
           targetId={comment.id}
           initialScore={comment.score}
           initialUserVote={comment.userVote}
+          isAuthenticated={isAuthenticated}
           compact
         />
 
@@ -170,9 +171,11 @@ function CommentNode({
                 Reply
               </button>
             )}
-            {isAuthenticated && (
-              <ReportButton targetType="comment" targetId={comment.id} />
-            )}
+            <ReportButton
+              targetType="comment"
+              targetId={comment.id}
+              isAuthenticated={isAuthenticated}
+            />
           </div>
 
           {showReply && (

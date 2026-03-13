@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +9,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const reportSchema = z.object({
   reason: z.string().min(1, "Please provide a reason").max(1000),
@@ -16,15 +25,18 @@ const reportSchema = z.object({
 interface ReportButtonProps extends React.ComponentProps<"div"> {
   targetType: "post" | "comment";
   targetId: string;
+  isAuthenticated?: boolean;
 }
 
 export function ReportButton({
   targetType,
   targetId,
+  isAuthenticated = true,
   className,
   ...props
 }: ReportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   const {
     register,
@@ -37,6 +49,11 @@ export function ReportButton({
   });
 
   const onSubmit = async (data: z.infer<typeof reportSchema>) => {
+    if (!isAuthenticated) {
+      setShowAuthDialog(true);
+      return;
+    }
+
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -49,6 +66,11 @@ export function ReportButton({
       });
 
       const result = await res.json();
+
+      if (!res.ok && result.error === "Unauthorized") {
+        setShowAuthDialog(true);
+        return;
+      }
 
       if (result.error) {
         toast.error(result.error);
@@ -68,7 +90,13 @@ export function ReportButton({
       {!isOpen ? (
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            if (!isAuthenticated) {
+              setShowAuthDialog(true);
+              return;
+            }
+            setIsOpen(true);
+          }}
           aria-label={`Report this ${targetType}`}
           className={cn(
             "rounded-md p-1 text-muted-foreground",
@@ -159,6 +187,22 @@ export function ReportButton({
           </Button>
         </form>
       )}
+
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login required</DialogTitle>
+            <DialogDescription>
+              Login with your institute email to vote, comment, and report posts.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button asChild>
+              <Link href="/login">Login with institute email</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
