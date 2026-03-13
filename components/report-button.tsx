@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -35,8 +36,12 @@ export function ReportButton({
   className,
   ...props
 }: ReportButtonProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const nextTarget = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const loginHref = `/login?next=${encodeURIComponent(nextTarget)}&action=report`;
 
   const {
     register,
@@ -198,7 +203,7 @@ export function ReportButton({
           </DialogHeader>
           <DialogFooter>
             <Button asChild>
-              <Link href="/login">Login with institute email</Link>
+              <Link href={loginHref}>Login with institute email</Link>
             </Button>
           </DialogFooter>
         </DialogContent>

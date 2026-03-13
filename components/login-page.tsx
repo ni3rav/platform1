@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { generateOtp } from "@/actions/login";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
 export const loginSchema = z.object({
@@ -26,6 +26,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     register,
     handleSubmit,
@@ -37,11 +38,18 @@ export function LoginForm({
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     const result = await generateOtp(data.email);
+    const next = searchParams.get("next") || "";
+    const action = searchParams.get("action") || "";
     
     if (result.success) {
       toast.success("Please check your inbox for verification code");
       reset(); // Clear the input field
-      router.push(`/verify?email=${encodeURIComponent(data.email)}`);
+      const params = new URLSearchParams({
+        email: data.email,
+      });
+      if (next) params.set("next", next);
+      if (action) params.set("action", action);
+      router.push(`/verify?${params.toString()}`);
     } else {
       if (result.error?.includes("minutes before requesting another OTP")) {
         toast.warning(result.error);

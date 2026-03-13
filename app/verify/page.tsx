@@ -28,6 +28,8 @@ function VerifyContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email");
+  const next = searchParams.get("next");
+  const action = searchParams.get("action");
 
   const {
     register,
@@ -39,6 +41,17 @@ function VerifyContent() {
   });
 
   const [otpValue, setOtpValue] = useState("");
+
+  const safeNext =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const finalNext = (() => {
+    if (!action) return safeNext;
+
+    const [path, query = ""] = safeNext.split("?");
+    const params = new URLSearchParams(query);
+    params.set("intent", action);
+    return `${path}?${params.toString()}`;
+  })();
 
   if (!email) {
     toast.error("Invalid verification request");
@@ -52,7 +65,7 @@ function VerifyContent() {
     if (result.success) {
       toast.success("Login successful!");
       setTimeout(() => {
-        router.push("/");
+        router.push(finalNext);
       }, 1000);
     } else {
       toast.error(result.error || "Failed to verify OTP");

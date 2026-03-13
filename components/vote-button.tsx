@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,10 +33,14 @@ export function VoteButton({
   className,
   ...props
 }: VoteButtonProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [score, setScore] = useState(initialScore);
   const [userVote, setUserVote] = useState(initialUserVote);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const nextTarget = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const loginHref = `/login?next=${encodeURIComponent(nextTarget)}&action=vote`;
 
   const vote = (value: number) => {
     if (!isAuthenticated) {
@@ -176,7 +181,7 @@ export function VoteButton({
           </DialogHeader>
           <DialogFooter>
             <Button asChild>
-              <Link href="/login">Login with institute email</Link>
+              <Link href={loginHref}>Login with institute email</Link>
             </Button>
           </DialogFooter>
         </DialogContent>

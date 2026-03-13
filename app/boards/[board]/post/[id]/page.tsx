@@ -81,6 +81,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (post.error) notFound();
 
   const auth = await getAuthUser();
+  const postPath = `/boards/${board}/post/${id}`;
 
   return (
     <main className="min-h-dvh bg-background">
@@ -194,7 +195,7 @@ export default async function PostDetailPage({ params }: PageProps) {
             <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-center">
               <p className="text-xs text-muted-foreground">
                 <Link
-                  href="/login"
+                  href={`/login?next=${encodeURIComponent(postPath)}&action=comment`}
                   className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   Login
