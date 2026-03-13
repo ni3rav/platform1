@@ -61,6 +61,10 @@ export function CreatePostForm({
   }, [defaultBoard, searchParams]);
 
   const [isOpen, setIsOpen] = useState(initialValues.shouldOpen);
+  const shouldOpenFromQuery =
+    searchParams.get("editor") === "open" ||
+    searchParams.get("title")?.length ||
+    searchParams.get("body")?.length;
 
   const {
     register,
@@ -139,6 +143,10 @@ export function CreatePostForm({
     return () => window.clearTimeout(timer);
   }, [isOpen, titleValue, bodyValue, boardValue, defaultBoard, syncComposerQuery]);
 
+  useEffect(() => {
+    setIsOpen(Boolean(shouldOpenFromQuery));
+  }, [shouldOpenFromQuery]);
+
   const onSubmit = async (data: z.infer<typeof createPostSchema>) => {
     try {
       const res = await fetch("/api/posts", {
@@ -170,27 +178,7 @@ export function CreatePostForm({
     }
   };
 
-  if (!isOpen) {
-    return (
-      <div className={cn(className)} {...props}>
-        <Button
-          onClick={() => {
-            setIsOpen(true);
-            syncComposerQuery({
-              open: true,
-              title: titleValue,
-              body: bodyValue,
-              board: defaultBoard || boardValue || "",
-            });
-          }}
-          variant="outline"
-          className="w-full justify-start text-muted-foreground"
-        >
-          What&apos;s on your mind?
-        </Button>
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
     <div
@@ -225,31 +213,29 @@ export function CreatePostForm({
             </button>
           </div>
 
-          {!defaultBoard && (
-            <Field>
-              <FieldLabel htmlFor="board">Board</FieldLabel>
-              <select
-                id="board"
-                {...register("board")}
-                className={cn(
-                  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
-                  "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                )}
-              >
-                <option value="">Select a board…</option>
-                {BOARDS.map((b) => (
-                  <option key={b.value} value={b.value}>
-                    {b.label}
-                  </option>
-                ))}
-              </select>
-              {errors.board && (
-                <p className="text-xs text-destructive">
-                  {errors.board.message}
-                </p>
+          <Field>
+            <FieldLabel htmlFor="board">Board</FieldLabel>
+            <select
+              id="board"
+              {...register("board")}
+              className={cn(
+                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
+                "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               )}
-            </Field>
-          )}
+            >
+              <option value="">Select a board…</option>
+              {BOARDS.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+            {errors.board && (
+              <p className="text-xs text-destructive">
+                {errors.board.message}
+              </p>
+            )}
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="title">Title</FieldLabel>

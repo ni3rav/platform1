@@ -14,12 +14,14 @@ import { IS_PRODUCTION } from "@/lib/env";
 
 export async function generateOtp(email: string): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!email || !VALID_EMAIL_REGEX.test(email)) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail || !VALID_EMAIL_REGEX.test(normalizedEmail)) {
       return { success: false, error: "Please enter a valid institute email" };
     }
 
     // Check rate limit
-    const rateLimitKey = `rate_limit:${email}`;
+    const rateLimitKey = `rate_limit:${normalizedEmail}`;
     const isRateLimited = await redis.exists(rateLimitKey);
 
     if (isRateLimited) {
@@ -34,16 +36,16 @@ export async function generateOtp(email: string): Promise<{ success: boolean; er
 
     const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
     
-    console.log("Storing hashed OTP for email:", email);
+    console.log("Storing hashed OTP for email:", normalizedEmail);
 
-    await redis.set(`otp:${email}`, hashedOtp, {
+    await redis.set(`otp:${normalizedEmail}`, hashedOtp, {
       ex: REDIS_OTP_TTL,
     });
 
     // Set rate limit
     await redis.set(rateLimitKey, "1", { ex: RATE_LIMIT_TTL });
 
-    await sendOtpEmail(email, otp);
+    await sendOtpEmail(normalizedEmail, otp);
 
     return { success: true };
   } catch (error) {
@@ -54,12 +56,17 @@ export async function generateOtp(email: string): Promise<{ success: boolean; er
 
 export async function verifyOtp(email: string, otp: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const storedHash = await redis.get(`otp:${email}`);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !VALID_EMAIL_REGEX.test(normalizedEmail)) {
+      return { success: false, error: "Please enter a valid institute email" };
+    }
+
+    const storedHash = await redis.get(`otp:${normalizedEmail}`);
     if (!storedHash) {
       return { success: false, error: "OTP not found or expired" };
     }
     
-    console.log("Stored hash found for email:", email);
+    console.log("Stored hash found for email:", normalizedEmail);
     
     const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
     if (storedHash !== otpHash) {
@@ -68,7 +75,7 @@ export async function verifyOtp(email: string, otp: string): Promise<{ success: 
     
     // jwt generation
     const user: User = {
-      role: ADMIN_EMAILS.includes(email) ? "admin" : "user",
+      role: ADMIN_EMAILS.includes(normalizedEmail) ? "admin" : "user",
     };
     const token = signToken(user);
 
@@ -82,7 +89,7 @@ export async function verifyOtp(email: string, otp: string): Promise<{ success: 
       path: "/",
     });
 
-    await redis.del(`otp:${email}`);
+    await redis.del(`otp:${normalizedEmail}`);
 
     return { success: true };
   } catch (error) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { VoteButton } from "@/components/vote-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { AdminPostDeleteButton } from "@/components/admin-post-delete-button";
 
 interface PostCardProps extends React.ComponentProps<"article"> {
   id: string;
@@ -15,6 +16,7 @@ interface PostCardProps extends React.ComponentProps<"article"> {
   commentCount: number;
   createdAt: string;
   userVote: number;
+  canDelete?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -36,6 +38,7 @@ export function PostCard({
   commentCount,
   createdAt,
   userVote,
+  canDelete = false,
   className,
   ...props
 }: PostCardProps) {
@@ -59,7 +62,7 @@ export function PostCard({
 
       <Link
         href={`/boards/${board}/post/${id}`}
-        className="flex-1 min-w-0 space-y-1.5"
+        className="flex-1 min-w-0 space-y-1.5 rounded-md active:bg-muted/60"
       >
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-foreground truncate text-pretty">
@@ -96,6 +99,8 @@ export function PostCard({
           <time dateTime={createdAt}>{timeAgo(createdAt)}</time>
         </div>
       </Link>
+
+      {canDelete && <AdminPostDeleteButton postId={id} />}
     </article>
   );
 }

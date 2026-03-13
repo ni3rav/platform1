@@ -94,6 +94,28 @@ export default async function BoardsPage() {
           ))}
         </nav>
 
+        <div className="mt-4 flex justify-center">
+          <Link
+            href="/boards/random?editor=open"
+            className="inline-flex w-2/5 items-center justify-center gap-2 rounded-full border border-input bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Create a new post
+          </Link>
+        </div>
+
       </div>
     </main>
   );

@@ -241,16 +241,31 @@ export function MarkdownEditor({
           type="button"
           aria-pressed={showPreview}
           aria-controls={previewId}
+          aria-label={showPreview ? "Back to editing" : "Preview post"}
+          title={showPreview ? "Back to editing" : "Preview post"}
           onClick={() => setShowPreview((v) => !v)}
           className={cn(
-            "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
+            "inline-flex min-h-8 min-w-8 items-center justify-center rounded p-1.5 transition-colors",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             showPreview
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:text-foreground hover:bg-muted",
           )}
         >
-          {showPreview ? "Edit" : "Preview"}
+          <svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </button>
       </div>
 

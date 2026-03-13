@@ -18,7 +18,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
 export const loginSchema = z.object({
-  email: z.email().regex(VALID_EMAIL_REGEX).transform(val => val.toLowerCase()),
+  email: z
+    .string()
+    .transform((value) => value.trim().toLowerCase())
+    .refine((value) => VALID_EMAIL_REGEX.test(value), {
+      message: "Please enter a valid institute email",
+    }),
 });
 
 export function LoginForm({

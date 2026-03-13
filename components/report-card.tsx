@@ -80,32 +80,6 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
     }
   };
 
-  const handleDirectDelete = async () => {
-    if (isDeleted) return;
-
-    setIsActing(true);
-    try {
-      const endpoint =
-        report.targetType === "post"
-          ? `/api/posts/${report.targetId}`
-          : `/api/comments/${report.targetId}`;
-      const res = await fetch(endpoint, { method: "DELETE" });
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        toast.error(data.error || "Failed to delete content");
-        return;
-      }
-
-      toast.success("Content deleted");
-      router.refresh();
-    } catch {
-      toast.error("Failed to delete content");
-    } finally {
-      setIsActing(false);
-    }
-  };
-
   return (
     <article
       className={cn(
@@ -207,16 +181,6 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
           </Button>
         </div>
       )}
-
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={isActing || isDeleted}
-        onClick={handleDirectDelete}
-        className="w-full"
-      >
-        {isDeleted ? "Already Deleted" : "Delete Content"}
-      </Button>
 
       {report.resolvedAt && (
         <p className="text-[11px] text-muted-foreground">

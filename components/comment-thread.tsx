@@ -78,18 +78,15 @@ function CommentNode({
   tree,
   postId,
   isAuthenticated,
-  depth,
 }: {
   comment: Comment;
   tree: Map<string | null, Comment[]>;
   postId: string;
   isAuthenticated: boolean;
-  depth: number;
 }) {
   const children = tree.get(comment.id) || [];
   const [isExpanded, setIsExpanded] = useState(true);
   const [showReply, setShowReply] = useState(false);
-  const maxNestingDepth = 4;
   const hasChildren = children.length > 0;
 
   return (
@@ -158,7 +155,7 @@ function CommentNode({
           </div>
 
           <div className="flex items-center gap-2 pt-0.5">
-            {isAuthenticated && !showReply && depth < maxNestingDepth && (
+            {isAuthenticated && !showReply && (
               <button
                 type="button"
                 onClick={() => setShowReply(true)}
@@ -202,7 +199,6 @@ function CommentNode({
               tree={tree}
               postId={postId}
               isAuthenticated={isAuthenticated}
-              depth={depth + 1}
             />
           ))}
         </div>
@@ -247,7 +243,6 @@ export function CommentThread({
           tree={tree}
           postId={postId}
           isAuthenticated={isAuthenticated}
-          depth={0}
         />
       ))}
     </div>

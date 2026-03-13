@@ -5,6 +5,7 @@ import { PostCard } from "@/components/post-card";
 import { CreatePostForm } from "@/components/create-post-form";
 import { SortTabs } from "@/components/sort-tabs";
 import { BoardsHeaderActions } from "@/components/boards-header-actions";
+import { BoardComposeBar } from "@/components/board-compose-bar";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -20,17 +21,25 @@ const BOARD_META: Record<string, { label: string; emoji: string }> = {
 
 interface PageProps {
   params: Promise<{ board: string }>;
-  searchParams: Promise<{ sort?: string; page?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    page?: string;
+    editor?: string;
+    title?: string;
+    body?: string;
+  }>;
 }
 
 async function PostFeed({
   board,
   sort,
   page,
+  canDelete,
 }: {
   board: string;
   sort: string;
   page: string;
+  canDelete: boolean;
 }) {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000";
@@ -85,6 +94,7 @@ async function PostFeed({
             commentCount={post.commentCount}
             createdAt={post.createdAt}
             userVote={post.userVote}
+            canDelete={canDelete}
           />
         ),
       )}
@@ -94,7 +104,7 @@ async function PostFeed({
 
 export default async function BoardPage({ params, searchParams }: PageProps) {
   const { board } = await params;
-  const { sort = "hot", page = "1" } = await searchParams;
+  const { sort = "hot", page = "1", editor, title, body } = await searchParams;
 
   if (!VALID_BOARDS.includes(board)) notFound();
 
@@ -103,10 +113,12 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
     redirect("/login");
   }
   const meta = BOARD_META[board];
+  const isComposing =
+    editor === "open" || Boolean(title?.length) || Boolean(body?.length);
 
   return (
     <main className="min-h-dvh bg-background">
-      <div className="mx-auto max-w-xl px-4 py-6">
+      <div className="mx-auto max-w-xl px-4 py-6 pb-24">
         <header className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
@@ -139,26 +151,35 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
           />
         </header>
 
-        {auth.isAuthenticated && (
-          <CreatePostForm defaultBoard={board} className="mb-4" />
-        )}
+        <CreatePostForm defaultBoard={board} className="mb-4" />
 
-        <div className="mb-4 flex items-center justify-between">
-          <Suspense fallback={null}>
-            <SortTabs />
-          </Suspense>
-        </div>
-
-        <Suspense
-          fallback={
-            <div className="flex justify-center py-12">
-              <Spinner className="size-5" />
+        {!isComposing && (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <Suspense fallback={null}>
+                <SortTabs />
+              </Suspense>
             </div>
-          }
-        >
-          <PostFeed board={board} sort={sort} page={page} />
-        </Suspense>
+
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-12">
+                  <Spinner className="size-5" />
+                </div>
+              }
+            >
+              <PostFeed
+                board={board}
+                sort={sort}
+                page={page}
+                canDelete={auth.role === "admin"}
+              />
+            </Suspense>
+          </>
+        )}
       </div>
+
+      <BoardComposeBar currentBoard={board} />
     </main>
   );
 }
