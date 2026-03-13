@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { MarkdownEditor } from "@/components/markdown-editor";
 
 const BOARDS = [
   { value: "random", label: "Random" },
@@ -42,13 +43,17 @@ export function CreatePostForm({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createPostSchema),
     defaultValues: { board: defaultBoard || "", title: "", body: "" },
   });
+
+  const bodyValue = watch("body");
 
   const onSubmit = async (data: z.infer<typeof createPostSchema>) => {
     try {
@@ -158,24 +163,23 @@ export function CreatePostForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="body">
-              Body{" "}
-              <span className="font-normal text-muted-foreground">
-                (markdown supported)
-              </span>
-            </FieldLabel>
-            <textarea
-              id="body"
-              rows={4}
-              placeholder="**bold**, *italic*, ~~strike~~, [links](url), # headings, - lists…"
-              spellCheck={false}
-              className={cn(
-                "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
-                "min-h-24 placeholder:text-muted-foreground",
-                "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            <FieldLabel htmlFor="body">Body</FieldLabel>
+            <Controller
+              control={control}
+              name="body"
+              render={({ field }) => (
+                <MarkdownEditor
+                  id="body"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Write your post…"
+                  rows={5}
+                />
               )}
-              {...register("body")}
             />
+            <p className="text-xs text-muted-foreground">
+              {bodyValue.length}/10000 characters
+            </p>
             {errors.body && (
               <p className="text-xs text-destructive">
                 {errors.body.message}
@@ -192,3 +196,4 @@ export function CreatePostForm({
     </div>
   );
 }
+
