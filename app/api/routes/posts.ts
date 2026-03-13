@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import { db } from "@/db";
 import { posts, postVotes } from "@/db/schema/posts";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and, isNull } from "drizzle-orm";
 import { extractAuth } from "@/lib/auth-api";
 import { tryCatch } from "@/lib/utils";
 
@@ -44,7 +44,9 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
           break;
       }
 
-      const conditions = board ? eq(posts.board, board) : undefined;
+      const conditions = board
+        ? and(eq(posts.board, board), isNull(posts.deletedAt))
+        : isNull(posts.deletedAt);
 
       const [error, results] = await tryCatch(() =>
         db
@@ -101,12 +103,75 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     },
   )
 
+  // Admin content list (admin only, optionally includes deleted)
+  .get(
+    "/admin",
+    async ({ query, auth, set }) => {
+      if (!auth) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      if (auth.role !== "admin") {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
+
+      const includeDeleted = query.includeDeleted === "1";
+      const limit = Math.min(parseInt(query.limit || "20"), 50);
+      const board = query.board as (typeof boardValues)[number] | undefined;
+      const whereClause =
+        board && includeDeleted
+          ? eq(posts.board, board)
+          : board
+            ? and(eq(posts.board, board), isNull(posts.deletedAt))
+            : includeDeleted
+              ? undefined
+              : isNull(posts.deletedAt);
+
+      const [error, rows] = await tryCatch(() =>
+        db
+          .select({
+            id: posts.id,
+            board: posts.board,
+            title: posts.title,
+            body: posts.body,
+            score: posts.score,
+            commentCount: posts.commentCount,
+            createdAt: posts.createdAt,
+            deletedAt: posts.deletedAt,
+          })
+          .from(posts)
+          .where(whereClause)
+          .orderBy(desc(posts.createdAt))
+          .limit(limit),
+      );
+
+      if (error || !rows) {
+        set.status = 500;
+        return { error: "Failed to fetch admin posts" };
+      }
+
+      return rows;
+    },
+    {
+      query: t.Object({
+        limit: t.Optional(t.String()),
+        board: t.Optional(t.String()),
+        includeDeleted: t.Optional(t.String()),
+      }),
+    },
+  )
+
   // Get single post
   .get(
     "/:id",
     async ({ params, auth, set }) => {
       const [error, result] = await tryCatch(() =>
-        db.select().from(posts).where(eq(posts.id, params.id)).limit(1),
+        db
+          .select()
+          .from(posts)
+          .where(and(eq(posts.id, params.id), isNull(posts.deletedAt)))
+          .limit(1),
       );
 
       if (error || !result || result.length === 0) {
@@ -187,7 +252,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       }
 
       const [error] = await tryCatch(() =>
-        db.delete(posts).where(eq(posts.id, params.id)),
+        db
+          .update(posts)
+          .set({ deletedAt: new Date() })
+          .where(and(eq(posts.id, params.id), isNull(posts.deletedAt))),
       );
 
       if (error) {

@@ -17,6 +17,7 @@ export const comments = pgTable("comments", {
     .references(() => posts.id, { onDelete: "cascade" }),
   parentId: uuid("parent_id"), // self-ref, null = top-level
   body: text("body").notNull(),
+  deletedAt: timestamp("deleted_at"),
   isAdminComment: boolean("is_admin_comment").notNull().default(false),
   score: integer("score").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -13,6 +13,7 @@ interface ReportTarget {
   body?: string;
   board?: string | null;
   postId?: string | null;
+  deletedAt?: string | Date | null;
 }
 
 interface Report {
@@ -44,6 +45,7 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
   const [isActing, setIsActing] = useState(false);
   const isPending = report.status === "pending";
   const content = report.targetContent;
+  const isDeleted = Boolean(content?.deletedAt);
   const preview =
     content?.body && content.body.length > 250
       ? content.body.slice(0, 250) + "…"
@@ -73,6 +75,32 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
       router.refresh();
     } catch {
       toast.error("Failed to process report");
+    } finally {
+      setIsActing(false);
+    }
+  };
+
+  const handleDirectDelete = async () => {
+    if (isDeleted) return;
+
+    setIsActing(true);
+    try {
+      const endpoint =
+        report.targetType === "post"
+          ? `/api/posts/${report.targetId}`
+          : `/api/comments/${report.targetId}`;
+      const res = await fetch(endpoint, { method: "DELETE" });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        toast.error(data.error || "Failed to delete content");
+        return;
+      }
+
+      toast.success("Content deleted");
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete content");
     } finally {
       setIsActing(false);
     }
@@ -115,6 +143,11 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
           >
             {report.status}
           </span>
+          {isDeleted && (
+            <span className="rounded-sm bg-destructive/10 px-1.5 py-px text-[10px] font-medium text-destructive">
+              deleted
+            </span>
+          )}
         </div>
         <time
           dateTime={report.createdAt}
@@ -174,6 +207,16 @@ export function ReportCard({ report, className, ...props }: ReportCardProps) {
           </Button>
         </div>
       )}
+
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={isActing || isDeleted}
+        onClick={handleDirectDelete}
+        className="w-full"
+      >
+        {isDeleted ? "Already Deleted" : "Delete Content"}
+      </Button>
 
       {report.resolvedAt && (
         <p className="text-[11px] text-muted-foreground">

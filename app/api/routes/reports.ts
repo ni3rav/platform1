@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { reports } from "@/db/schema/reports";
 import { posts } from "@/db/schema/posts";
 import { comments } from "@/db/schema/comments";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, isNull } from "drizzle-orm";
 import { extractAuth } from "@/lib/auth-api";
 import { tryCatch } from "@/lib/utils";
 
@@ -101,11 +101,16 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
 
       let postMap: Record<
         string,
-        { title: string; body: string; board: string }
+        {
+          title: string;
+          body: string;
+          board: string;
+          deletedAt: Date | null;
+        }
       > = {};
       let commentMap: Record<
         string,
-        { body: string; postId: string }
+        { body: string; postId: string; deletedAt: Date | null }
       > = {};
 
       if (postIds.length > 0) {
@@ -116,6 +121,7 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
               title: posts.title,
               body: posts.body,
               board: posts.board,
+              deletedAt: posts.deletedAt,
             })
             .from(posts)
             .where(
@@ -127,7 +133,12 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
         );
         if (postRows) {
           for (const p of postRows) {
-            postMap[p.id] = { title: p.title, body: p.body, board: p.board };
+            postMap[p.id] = {
+              title: p.title,
+              body: p.body,
+              board: p.board,
+              deletedAt: p.deletedAt,
+            };
           }
         }
       }
@@ -139,6 +150,7 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
               id: comments.id,
               body: comments.body,
               postId: comments.postId,
+              deletedAt: comments.deletedAt,
             })
             .from(comments)
             .where(
@@ -150,7 +162,11 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
         );
         if (commentRows) {
           for (const c of commentRows) {
-            commentMap[c.id] = { body: c.body, postId: c.postId };
+            commentMap[c.id] = {
+              body: c.body,
+              postId: c.postId,
+              deletedAt: c.deletedAt,
+            };
           }
         }
       }
@@ -186,7 +202,12 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
           return {
             ...r,
             targetContent: target
-              ? { title: target.title, body: target.body, board: target.board }
+              ? {
+                  title: target.title,
+                  body: target.body,
+                  board: target.board,
+                  deletedAt: target.deletedAt,
+                }
               : { title: "[Deleted]", body: "", board: null },
           };
         } else {
@@ -199,7 +220,12 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
           return {
             ...r,
             targetContent: target
-              ? { body: target.body, postId: target.postId, board }
+              ? {
+                  body: target.body,
+                  postId: target.postId,
+                  board,
+                  deletedAt: target.deletedAt,
+                }
               : { body: "[Deleted]", postId: null, board: null },
           };
         }
@@ -252,19 +278,25 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
             if (!report) throw new Error("Report not found");
 
             if (report.targetType === "post") {
-              await tx.delete(posts).where(eq(posts.id, report.targetId));
+              await tx
+                .update(posts)
+                .set({ deletedAt: new Date() })
+                .where(and(eq(posts.id, report.targetId), isNull(posts.deletedAt)));
             } else {
               const [comment] = await tx
-                .select({ postId: comments.postId })
+                .select({ postId: comments.postId, deletedAt: comments.deletedAt })
                 .from(comments)
                 .where(eq(comments.id, report.targetId))
                 .limit(1);
 
-              await tx
-                .delete(comments)
-                .where(eq(comments.id, report.targetId));
+              if (comment && !comment.deletedAt) {
+                await tx
+                  .update(comments)
+                  .set({ deletedAt: new Date() })
+                  .where(
+                    and(eq(comments.id, report.targetId), isNull(comments.deletedAt)),
+                  );
 
-              if (comment) {
                 await tx
                   .update(posts)
                   .set({

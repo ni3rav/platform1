@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { ReportCard } from "@/components/report-card";
+import { AdminContentItem } from "@/components/admin-content-item";
 import { AdminFilters } from "@/components/admin-filters";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +17,25 @@ interface PageProps {
     sort?: string;
   }>;
 }
+
+type ModerationPost = {
+  id: string;
+  board: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  deletedAt: string | null;
+};
+
+type ModerationComment = {
+  id: string;
+  postId: string;
+  postBoard: string;
+  postTitle: string;
+  body: string;
+  createdAt: string;
+  deletedAt: string | null;
+};
 
 const STATUS_TABS = [
   { value: "pending", label: "Pending" },
@@ -111,6 +131,77 @@ async function ReportsList({
   );
 }
 
+async function DirectModerationList() {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000";
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const [postsRes, commentsRes] = await Promise.all([
+    fetch(`${baseUrl}/api/posts/admin?limit=8&includeDeleted=1`, {
+      cache: "no-store",
+      headers: { Cookie: cookieHeader },
+    }),
+    fetch(`${baseUrl}/api/comments/admin?limit=8&includeDeleted=1`, {
+      cache: "no-store",
+      headers: { Cookie: cookieHeader },
+    }),
+  ]);
+
+  const [postsData, commentsData] = await Promise.all([
+    postsRes.json().catch(() => []),
+    commentsRes.json().catch(() => []),
+  ]);
+
+  const posts = Array.isArray(postsData) ? postsData : [];
+  const comments = Array.isArray(commentsData) ? commentsData : [];
+
+  return (
+    <section className="mb-6 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">Direct moderation</h2>
+        <p className="text-[11px] text-muted-foreground">
+          Delete posts or comments without reports
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-2">
+          <h3 className="text-xs font-medium text-muted-foreground">Recent posts</h3>
+          {posts.length === 0 ? (
+            <p className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              No posts found
+            </p>
+          ) : (
+            posts.map((post: ModerationPost) => (
+              <AdminContentItem key={post.id} itemType="post" item={post} />
+            ))
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xs font-medium text-muted-foreground">
+            Recent comments
+          </h3>
+          {comments.length === 0 ? (
+            <p className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              No comments found
+            </p>
+          ) : (
+            comments.map((comment: ModerationComment) => (
+              <AdminContentItem
+                key={comment.id}
+                itemType="comment"
+                item={comment}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function AdminPage({ searchParams }: PageProps) {
   const auth = await getAuthUser();
 
@@ -180,6 +271,16 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {/* Type / Board / Sort filters */}
         <AdminFilters currentFilters={currentFilters} className="mb-4" />
+
+        <Suspense
+          fallback={
+            <div className="mb-6 flex justify-center py-6">
+              <Spinner className="size-5" />
+            </div>
+          }
+        >
+          <DirectModerationList />
+        </Suspense>
 
         <Suspense
           fallback={

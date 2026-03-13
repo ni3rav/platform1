@@ -23,6 +23,7 @@ export const posts = pgTable("posts", {
   board: boardEnum("board").notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),
+  deletedAt: timestamp("deleted_at"),
   isAdminPost: boolean("is_admin_post").notNull().default(false),
   score: integer("score").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),
