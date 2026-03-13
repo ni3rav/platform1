@@ -2,6 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const BOARDS = [
   { value: "", label: "All boards" },
@@ -44,69 +52,122 @@ export function AdminFilters({
     router.push(`/admin?${params.toString()}`);
   };
 
+  const selectedType = TYPES.find((type) => type.value === (currentFilters.type || ""));
+  const selectedBoard = BOARDS.find(
+    (board) => board.value === (currentFilters.board || ""),
+  );
+  const selectedSort = SORTS.find(
+    (sort) => sort.value === (currentFilters.sort || "newest"),
+  );
+
   return (
     <div className={cn("flex items-center gap-2", className)} {...props}>
       <div className="flex-1">
-        <label htmlFor="type-filter" className="sr-only">
-          Filter by type
-        </label>
-        <select
-          id="type-filter"
-          defaultValue={currentFilters.type || ""}
-          onChange={(e) => navigate("type", e.target.value)}
-          className={cn(
-            "w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
-            "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          )}
-        >
-          {TYPES.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "inline-flex min-h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
+              "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
+            aria-label="Filter by type"
+          >
+            <span>{selectedType?.label || "All types"}</span>
+            <svg
+              width={12}
+              height={12}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>Filter by type</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {TYPES.map(({ value, label }) => (
+              <DropdownMenuItem key={value} onClick={() => navigate("type", value)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex-1">
-        <label htmlFor="board-filter" className="sr-only">
-          Filter by board
-        </label>
-        <select
-          id="board-filter"
-          defaultValue={currentFilters.board || ""}
-          onChange={(e) => navigate("board", e.target.value)}
-          className={cn(
-            "w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
-            "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          )}
-        >
-          {BOARDS.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "inline-flex min-h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
+              "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
+            aria-label="Filter by board"
+          >
+            <span>{selectedBoard?.label || "All boards"}</span>
+            <svg
+              width={12}
+              height={12}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>Filter by board</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {BOARDS.map(({ value, label }) => (
+              <DropdownMenuItem key={value} onClick={() => navigate("board", value)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex-1">
-        <label htmlFor="sort-filter" className="sr-only">
-          Sort order
-        </label>
-        <select
-          id="sort-filter"
-          defaultValue={currentFilters.sort || "newest"}
-          onChange={(e) => navigate("sort", e.target.value)}
-          className={cn(
-            "w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
-            "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          )}
-        >
-          {SORTS.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "inline-flex min-h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground",
+              "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
+            aria-label="Sort order"
+          >
+            <span>{selectedSort?.label || "Newest first"}</span>
+            <svg
+              width={12}
+              height={12}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>Sort order</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {SORTS.map(({ value, label }) => (
+              <DropdownMenuItem key={value} onClick={() => navigate("sort", value)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

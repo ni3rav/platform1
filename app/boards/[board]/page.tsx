@@ -179,7 +179,7 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
         )}
       </div>
 
-      <BoardComposeBar currentBoard={board} />
+      {!isComposing && <BoardComposeBar currentBoard={board} />}
     </main>
   );
 }

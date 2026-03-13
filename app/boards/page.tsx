@@ -96,7 +96,7 @@ export default async function BoardsPage() {
 
         <div className="mt-4 flex justify-center">
           <Link
-            href="/boards/random?editor=open"
+            href="/boards/random?editor=open&returnTo=%2Fboards"
             className="inline-flex w-2/5 items-center justify-center gap-2 rounded-full border border-input bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <svg

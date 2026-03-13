@@ -12,6 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const BOARDS = [
   { value: "random", label: "Random" },
@@ -65,6 +73,11 @@ export function CreatePostForm({
     searchParams.get("editor") === "open" ||
     searchParams.get("title")?.length ||
     searchParams.get("body")?.length;
+  const returnTo = searchParams.get("returnTo");
+  const safeReturnTo =
+    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? returnTo
+      : null;
 
   const {
     register,
@@ -85,6 +98,8 @@ export function CreatePostForm({
   const titleValue = watch("title");
   const bodyValue = watch("body");
   const boardValue = watch("board");
+  const selectedBoardLabel =
+    BOARDS.find((board) => board.value === boardValue)?.label || "Select a board...";
 
   const syncComposerQuery = useCallback(
     ({
@@ -194,6 +209,10 @@ export function CreatePostForm({
             <button
               type="button"
               onClick={() => {
+                if (safeReturnTo) {
+                  router.push(safeReturnTo);
+                  return;
+                }
                 setIsOpen(false);
                 reset({ board: defaultBoard || boardValue || "", title: "", body: "" });
                 syncComposerQuery({
@@ -215,21 +234,49 @@ export function CreatePostForm({
 
           <Field>
             <FieldLabel htmlFor="board">Board</FieldLabel>
-            <select
-              id="board"
-              {...register("board")}
-              className={cn(
-                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
-                "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            <Controller
+              control={control}
+              name="board"
+              render={({ field }) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    id="board"
+                    className={cn(
+                      "inline-flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
+                      "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    )}
+                    aria-label="Select board"
+                  >
+                    <span>{selectedBoardLabel}</span>
+                    <svg
+                      width={14}
+                      height={14}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>Select board</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {BOARDS.map((board) => (
+                      <DropdownMenuItem
+                        key={board.value}
+                        onClick={() => field.onChange(board.value)}
+                      >
+                        {board.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-            >
-              <option value="">Select a board…</option>
-              {BOARDS.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
+            />
             {errors.board && (
               <p className="text-xs text-destructive">
                 {errors.board.message}
