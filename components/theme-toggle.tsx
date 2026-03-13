@@ -49,7 +49,7 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
       title={ready ? `Theme: ${theme}` : "Toggle theme"}
       onClick={toggleTheme}
       className={cn(
-        "fixed right-4 top-4 z-50 rounded-full border border-input bg-background p-2",
+        "rounded-full border border-input bg-background p-2",
         "text-muted-foreground shadow-sm transition-colors hover:text-foreground hover:bg-muted",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         className,

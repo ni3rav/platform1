@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAuthUser } from "@/lib/auth";
+import { BoardsHeaderActions } from "@/components/boards-header-actions";
 
 const BOARDS = [
   {
@@ -49,21 +50,17 @@ export default async function BoardsPage() {
               Pick a board and start browsing
             </p>
           </div>
-          {auth.isAuthenticated && auth.role === "admin" && (
-            <Link
-              href="/admin"
-              className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              Admin →
-            </Link>
-          )}
+          <BoardsHeaderActions
+            isAuthenticated={auth.isAuthenticated}
+            isAdmin={auth.role === "admin"}
+          />
         </header>
 
         <nav aria-label="Board categories" className="grid gap-2">
           {BOARDS.map((board) => (
             <Link
               key={board.slug}
-              href={`/boards/${board.slug}?board=${board.slug}`}
+              href={`/boards/${board.slug}`}
               className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <span className="text-2xl" aria-hidden="true">

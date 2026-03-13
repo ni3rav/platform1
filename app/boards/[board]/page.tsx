@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PostCard } from "@/components/post-card";
 import { CreatePostForm } from "@/components/create-post-form";
 import { SortTabs } from "@/components/sort-tabs";
+import { BoardsHeaderActions } from "@/components/boards-header-actions";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -103,28 +104,36 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
   return (
     <main className="min-h-dvh bg-background">
       <div className="mx-auto max-w-xl px-4 py-6">
-        <header className="mb-6 flex items-center gap-3">
-          <Link
-            href="/boards"
-            aria-label="Back to boards"
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <svg
-              width={18}
-              height={18}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+        <header className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/boards"
+              aria-label="Back to boards"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <span className="text-xl" aria-hidden="true">
-            {meta.emoji}
-          </span>
-          <h1 className="text-lg font-bold text-foreground">{meta.label}</h1>
+              <svg
+                width={18}
+                height={18}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </Link>
+            <span className="text-xl" aria-hidden="true">
+              {meta.emoji}
+            </span>
+            <h1 className="text-lg font-bold text-foreground">{meta.label}</h1>
+          </div>
+
+          <BoardsHeaderActions
+            isAuthenticated={auth.isAuthenticated}
+            isAdmin={auth.role === "admin"}
+            showAdminAction={false}
+          />
         </header>
 
         {auth.isAuthenticated && (

@@ -95,8 +95,9 @@ export function CreatePostForm({
       board: string;
     }) => {
       const params = new URLSearchParams(searchParams.toString());
+      const shouldPersistBoardInQuery = !defaultBoard;
 
-      if (board) {
+      if (shouldPersistBoardInQuery && board) {
         params.set("board", board);
       } else {
         params.delete("board");
@@ -120,7 +121,7 @@ export function CreatePostForm({
         router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
       }
     },
-    [pathname, router, searchParams],
+    [defaultBoard, pathname, router, searchParams],
   );
 
   useEffect(() => {

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Syne, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const sans = Syne({
   variable: "--font-space-grotesk",
@@ -38,7 +37,6 @@ export default function RootLayout({
       <body
         className={`${sans.variable} ${mono.variable} antialiased h-dvh w-screen`}
       >
-        <ThemeToggle />
         <Toaster richColors position="top-center" />
         {children}
       </body>

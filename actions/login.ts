@@ -90,3 +90,9 @@ export async function verifyOtp(email: string, otp: string): Promise<{ success: 
     return { success: false, error: "Failed to verify OTP. Please try again." };
   }
 }
+
+export async function logout(): Promise<{ success: boolean }> {
+  const cookieStore = await cookies();
+  cookieStore.delete("auth-token");
+  return { success: true };
+}
