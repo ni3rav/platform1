@@ -48,7 +48,7 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
     },
   )
 
-  // List reports (admin only)
+  // List reports (admin only) — includes target content
   .get(
     "/",
     async ({ query, auth, set }) => {
@@ -63,24 +63,164 @@ export const reportRoutes = new Elysia({ prefix: "/reports" })
 
       const status =
         (query.status as "pending" | "resolved" | "rejected") || "pending";
+      const typeFilter = query.type as "post" | "comment" | undefined;
+      const boardFilter = query.board || undefined;
+      const sortOrder = query.sort === "oldest" ? "asc" : "desc";
+
+      // Build conditions
+      const conditions = [eq(reports.status, status)];
+      if (typeFilter) {
+        conditions.push(eq(reports.targetType, typeFilter));
+      }
+
+      const orderBy =
+        sortOrder === "asc"
+          ? sql`${reports.createdAt} ASC`
+          : sql`${reports.createdAt} DESC`;
 
       const [error, results] = await tryCatch(() =>
         db
           .select()
           .from(reports)
-          .where(eq(reports.status, status))
-          .orderBy(reports.createdAt),
+          .where(sql`${sql.join(conditions, sql` AND `)}`)
+          .orderBy(orderBy),
       );
 
       if (error || !results) {
         set.status = 500;
         return { error: "Failed to fetch reports" };
       }
-      return results;
+
+      // Batch fetch target content (2 queries max, no N+1)
+      const postIds = results
+        .filter((r) => r.targetType === "post")
+        .map((r) => r.targetId);
+      const commentIds = results
+        .filter((r) => r.targetType === "comment")
+        .map((r) => r.targetId);
+
+      let postMap: Record<
+        string,
+        { title: string; body: string; board: string }
+      > = {};
+      let commentMap: Record<
+        string,
+        { body: string; postId: string }
+      > = {};
+
+      if (postIds.length > 0) {
+        const [, postRows] = await tryCatch(() =>
+          db
+            .select({
+              id: posts.id,
+              title: posts.title,
+              body: posts.body,
+              board: posts.board,
+            })
+            .from(posts)
+            .where(
+              sql`${posts.id} IN (${sql.join(
+                postIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            ),
+        );
+        if (postRows) {
+          for (const p of postRows) {
+            postMap[p.id] = { title: p.title, body: p.body, board: p.board };
+          }
+        }
+      }
+
+      if (commentIds.length > 0) {
+        const [, commentRows] = await tryCatch(() =>
+          db
+            .select({
+              id: comments.id,
+              body: comments.body,
+              postId: comments.postId,
+            })
+            .from(comments)
+            .where(
+              sql`${comments.id} IN (${sql.join(
+                commentIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            ),
+        );
+        if (commentRows) {
+          for (const c of commentRows) {
+            commentMap[c.id] = { body: c.body, postId: c.postId };
+          }
+        }
+      }
+
+      // If board filter is set, get post IDs for those comments
+      let commentPostBoards: Record<string, string> = {};
+      if (boardFilter && commentIds.length > 0) {
+        const commentPostIds = Object.values(commentMap).map((c) => c.postId);
+        if (commentPostIds.length > 0) {
+          const [, boardRows] = await tryCatch(() =>
+            db
+              .select({ id: posts.id, board: posts.board })
+              .from(posts)
+              .where(
+                sql`${posts.id} IN (${sql.join(
+                  commentPostIds.map((id) => sql`${id}`),
+                  sql`, `,
+                )})`,
+              ),
+          );
+          if (boardRows) {
+            for (const b of boardRows) {
+              commentPostBoards[b.id] = b.board;
+            }
+          }
+        }
+      }
+
+      // Enrich and filter
+      let enriched = results.map((r) => {
+        if (r.targetType === "post") {
+          const target = postMap[r.targetId];
+          return {
+            ...r,
+            targetContent: target
+              ? { title: target.title, body: target.body, board: target.board }
+              : { title: "[Deleted]", body: "", board: null },
+          };
+        } else {
+          const target = commentMap[r.targetId];
+          const board = target
+            ? commentPostBoards[target.postId] ||
+              postMap[target.postId]?.board ||
+              null
+            : null;
+          return {
+            ...r,
+            targetContent: target
+              ? { body: target.body, postId: target.postId, board }
+              : { body: "[Deleted]", postId: null, board: null },
+          };
+        }
+      });
+
+      // Apply board filter
+      if (boardFilter) {
+        enriched = enriched.filter((r) => {
+          const board = r.targetContent?.board;
+          return board === boardFilter;
+        });
+      }
+
+      return enriched;
     },
     {
       query: t.Object({
         status: t.Optional(t.String()),
+        type: t.Optional(t.String()),
+        board: t.Optional(t.String()),
+        sort: t.Optional(t.String()),
       }),
     },
   )

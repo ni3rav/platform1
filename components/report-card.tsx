@@ -5,7 +5,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { useRouter } from "next/navigation";
+
+interface ReportTarget {
+  title?: string;
+  body?: string;
+  board?: string | null;
+  postId?: string | null;
+}
 
 interface Report {
   id: string;
@@ -15,6 +23,7 @@ interface Report {
   status: "pending" | "resolved" | "rejected";
   createdAt: string;
   resolvedAt: string | null;
+  targetContent?: ReportTarget;
 }
 
 interface ReportCardProps extends React.ComponentProps<"article"> {
@@ -30,13 +39,15 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function ReportCard({
-  report,
-  className,
-  ...props
-}: ReportCardProps) {
+export function ReportCard({ report, className, ...props }: ReportCardProps) {
   const router = useRouter();
   const [isActing, setIsActing] = useState(false);
+  const isPending = report.status === "pending";
+  const content = report.targetContent;
+  const preview =
+    content?.body && content.body.length > 250
+      ? content.body.slice(0, 250) + "…"
+      : content?.body || "";
 
   const handleAction = async (action: "resolve" | "reject") => {
     setIsActing(true);
@@ -67,8 +78,6 @@ export function ReportCard({
     }
   };
 
-  const isPending = report.status === "pending";
-
   return (
     <article
       className={cn(
@@ -78,9 +87,9 @@ export function ReportCard({
       )}
       {...props}
     >
-      {/* Header */}
+      {/* Header badges */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span
             className={cn(
               "rounded-sm px-1.5 py-px text-[10px] font-medium",
@@ -91,6 +100,11 @@ export function ReportCard({
           >
             {report.targetType.toUpperCase()}
           </span>
+          {content?.board && (
+            <span className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">
+              {content.board}
+            </span>
+          )}
           <span
             className={cn(
               "rounded-sm px-1.5 py-px text-[10px] font-medium",
@@ -104,19 +118,35 @@ export function ReportCard({
         </div>
         <time
           dateTime={report.createdAt}
-          className="text-[11px] text-muted-foreground"
+          className="shrink-0 text-[11px] text-muted-foreground"
         >
           {timeAgo(report.createdAt)}
         </time>
       </div>
 
-      {/* Target ID */}
-      <p className="text-[11px] text-muted-foreground font-mono truncate">
-        Target: {report.targetId}
-      </p>
+      {/* Reported content */}
+      <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Reported content
+        </p>
+        {content?.title && (
+          <p className="text-xs font-semibold text-foreground">{content.title}</p>
+        )}
+        {preview && (
+          <div className="text-xs text-foreground/80 line-clamp-4">
+            <MarkdownRenderer content={preview} />
+          </div>
+        )}
+        {!preview && !content?.title && (
+          <p className="text-xs italic text-muted-foreground">[Content deleted]</p>
+        )}
+      </div>
 
       {/* Reason */}
-      <div className="rounded-md bg-muted/50 px-3 py-2">
+      <div className="space-y-1">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Reason
+        </p>
         <p className="text-xs text-foreground">{report.reason}</p>
       </div>
 

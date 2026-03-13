@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { ReportCard } from "@/components/report-card";
+import { AdminFilters } from "@/components/admin-filters";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 
 interface PageProps {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    type?: string;
+    board?: string;
+    sort?: string;
+  }>;
 }
 
 const STATUS_TABS = [
@@ -16,12 +23,41 @@ const STATUS_TABS = [
   { value: "rejected", label: "Rejected" },
 ] as const;
 
-async function ReportsList({ status }: { status: string }) {
+function buildFilterUrl(
+  current: Record<string, string>,
+  override: Record<string, string>,
+) {
+  const params = new URLSearchParams({ ...current, ...override });
+  for (const [key, val] of params.entries()) {
+    if (!val) params.delete(key);
+  }
+  return `/admin?${params.toString()}`;
+}
+
+async function ReportsList({
+  status,
+  type,
+  board,
+  sort,
+}: {
+  status: string;
+  type: string;
+  board: string;
+  sort: string;
+}) {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000";
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
 
-  const res = await fetch(`${baseUrl}/api/reports?status=${status}`, {
+  const params = new URLSearchParams({ status });
+  if (type) params.set("type", type);
+  if (board) params.set("board", board);
+  if (sort) params.set("sort", sort);
+
+  const res = await fetch(`${baseUrl}/api/reports?${params.toString()}`, {
     cache: "no-store",
+    headers: { Cookie: cookieHeader },
   });
 
   if (!res.ok) {
@@ -45,9 +81,7 @@ async function ReportsList({ status }: { status: string }) {
   if (!Array.isArray(reports) || reports.length === 0) {
     return (
       <div className="py-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          No {status} reports
-        </p>
+        <p className="text-sm text-muted-foreground">No {status} reports</p>
       </div>
     );
   }
@@ -63,6 +97,12 @@ async function ReportsList({ status }: { status: string }) {
           status: "pending" | "resolved" | "rejected";
           createdAt: string;
           resolvedAt: string | null;
+          targetContent?: {
+            title?: string;
+            body?: string;
+            board?: string | null;
+            postId?: string | null;
+          };
         }) => (
           <ReportCard key={report.id} report={report} />
         ),
@@ -78,7 +118,14 @@ export default async function AdminPage({ searchParams }: PageProps) {
     redirect("/boards");
   }
 
-  const { status = "pending" } = await searchParams;
+  const {
+    status = "pending",
+    type = "",
+    board = "",
+    sort = "newest",
+  } = await searchParams;
+
+  const currentFilters = { status, type, board, sort };
 
   return (
     <main className="min-h-dvh bg-background">
@@ -116,7 +163,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
           {STATUS_TABS.map(({ value, label }) => (
             <Link
               key={value}
-              href={`/admin?status=${value}`}
+              href={buildFilterUrl(currentFilters, { status: value })}
               aria-current={status === value ? "page" : undefined}
               className={cn(
                 "flex-1 rounded-md px-3 py-1.5 text-center text-xs font-medium transition-colors",
@@ -131,6 +178,9 @@ export default async function AdminPage({ searchParams }: PageProps) {
           ))}
         </nav>
 
+        {/* Type / Board / Sort filters */}
+        <AdminFilters currentFilters={currentFilters} className="mb-4" />
+
         <Suspense
           fallback={
             <div className="flex justify-center py-12">
@@ -138,7 +188,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
             </div>
           }
         >
-          <ReportsList status={status} />
+          <ReportsList status={status} type={type} board={board} sort={sort} />
         </Suspense>
       </div>
     </main>
