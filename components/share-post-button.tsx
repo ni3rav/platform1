@@ -13,18 +13,32 @@ export function SharePostButton({
   ...props
 }: SharePostButtonProps) {
   const handleShare = async () => {
-    try {
-      const url = window.location.href;
+    const url = window.location.href;
 
-      if (navigator.share) {
-        await navigator.share({ title, url });
+    if (!navigator.share) {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Post link copied");
+      } catch {
+        toast.error("Could not share this post. Please try again.");
+      }
+      return;
+    }
+
+    try {
+      // Native share sheet (apps + targets) on supported devices/browsers.
+      await navigator.share({ title, url });
+    } catch (error) {
+      // AbortError is thrown when user closes the sheet without sharing.
+      if (
+        error &&
+        typeof error === "object" &&
+        "name" in error &&
+        error.name === "AbortError"
+      ) {
         return;
       }
-
-      await navigator.clipboard.writeText(url);
-      toast.success("Post link copied");
-    } catch {
-      toast.error("Could not share this post");
+      toast.error("Could not share this post. Please try again.");
     }
   };
 
