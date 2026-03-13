@@ -6,6 +6,7 @@ import { VoteButton } from "@/components/vote-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { CommentForm } from "@/components/comment-form";
 import { CommentThread } from "@/components/comment-thread";
+import { ReportButton } from "@/components/report-button";
 import { getAuthUser } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -146,24 +147,29 @@ export default async function PostDetailPage({ params }: PageProps) {
                 <MarkdownRenderer content={post.body} />
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <svg
-                  width={12}
-                  height={12}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                <span>
-                  {post.commentCount}{" "}
-                  {post.commentCount === 1 ? "comment" : "comments"}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <svg
+                    width={12}
+                    height={12}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span>
+                    {post.commentCount}{" "}
+                    {post.commentCount === 1 ? "comment" : "comments"}
+                  </span>
+                </div>
+                {auth.isAuthenticated && (
+                  <ReportButton targetType="post" targetId={post.id} />
+                )}
               </div>
             </div>
           </div>

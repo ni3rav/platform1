@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { VoteButton } from "@/components/vote-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { CommentForm } from "@/components/comment-form";
+import { ReportButton } from "@/components/report-button";
 
 interface Comment {
   id: string;
@@ -168,6 +169,9 @@ function CommentNode({
               >
                 Reply
               </button>
+            )}
+            {isAuthenticated && (
+              <ReportButton targetType="comment" targetId={comment.id} />
             )}
           </div>
 
