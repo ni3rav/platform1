@@ -63,7 +63,7 @@ export default async function BoardsPage() {
           {BOARDS.map((board) => (
             <Link
               key={board.slug}
-              href={`/boards/${board.slug}`}
+              href={`/boards/${board.slug}?board=${board.slug}`}
               className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <span className="text-2xl" aria-hidden="true">

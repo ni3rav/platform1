@@ -17,6 +17,12 @@ export function SortTabs({ className, ...props }: SortTabsProps) {
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "hot";
 
+  const buildHref = (sort: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort", sort);
+    return `${pathname}?${params.toString()}`;
+  };
+
   return (
     <nav
       aria-label="Sort posts"
@@ -26,7 +32,7 @@ export function SortTabs({ className, ...props }: SortTabsProps) {
       {SORT_OPTIONS.map(({ value, label }) => (
         <Link
           key={value}
-          href={`${pathname}?sort=${value}`}
+          href={buildHref(value)}
           aria-current={currentSort === value ? "page" : undefined}
           className={cn(
             "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",

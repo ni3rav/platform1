@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Syne, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const sans = Syne({
   variable: "--font-space-grotesk",
@@ -26,11 +27,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='platform1-theme';var t=localStorage.getItem(k);if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.classList.toggle('dark',t==='dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${sans.variable} ${mono.variable} antialiased h-dvh w-screen`}
       >
-        <Toaster richColors position="top-center"/>
+        <ThemeToggle />
+        <Toaster richColors position="top-center" />
         {children}
       </body>
     </html>
