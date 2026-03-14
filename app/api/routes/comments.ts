@@ -131,7 +131,8 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
               postId: body.postId,
               parentId: body.parentId || null,
               body: body.body,
-              isAdminComment: auth.role === "admin",
+              isAdminComment:
+                auth.role === "admin" ? (body.asMod ?? true) : false,
             })
             .returning();
 
@@ -156,6 +157,7 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         postId: t.String(),
         parentId: t.Optional(t.String()),
         body: t.String({ minLength: 1, maxLength: 5000 }),
+        asMod: t.Optional(t.Boolean()),
       }),
     },
   )

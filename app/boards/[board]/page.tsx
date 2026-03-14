@@ -150,7 +150,11 @@ export default async function BoardPage({ params, searchParams }: PageProps) {
           />
         </header>
 
-        <CreatePostForm defaultBoard={board} className="mb-4" />
+        <CreatePostForm
+          defaultBoard={board}
+          isAdmin={auth.role === "admin"}
+          className="mb-4"
+        />
 
         {!isComposing && (
           <>

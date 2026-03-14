@@ -216,7 +216,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
             board: body.board as (typeof boardValues)[number],
             title: body.title,
             body: body.body,
-            isAdminPost: auth.role === "admin",
+            isAdminPost: auth.role === "admin" ? (body.asMod ?? true) : false,
           })
           .returning(),
       );
@@ -234,6 +234,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         board: t.String(),
         title: t.String({ minLength: 1, maxLength: 300 }),
         body: t.String({ minLength: 1, maxLength: 10000 }),
+        asMod: t.Optional(t.Boolean()),
       }),
     },
   )

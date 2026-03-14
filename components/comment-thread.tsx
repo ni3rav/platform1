@@ -184,6 +184,7 @@ function CommentNode({
             <CommentForm
               postId={postId}
               parentId={comment.id}
+              isAdmin={isAdmin}
               placeholder="Write a reply…"
               autoFocus
               onCancel={() => setShowReply(false)}

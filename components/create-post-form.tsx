@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,11 +39,13 @@ const createPostSchema = z.object({
 interface CreatePostFormProps extends React.ComponentProps<"div"> {
   defaultBoard?: string;
   onSuccess?: () => void;
+  isAdmin?: boolean;
 }
 
 export function CreatePostForm({
   defaultBoard,
   onSuccess,
+  isAdmin = false,
   className,
   ...props
 }: CreatePostFormProps) {
@@ -69,6 +72,7 @@ export function CreatePostForm({
   }, [defaultBoard, searchParams]);
 
   const [isOpen, setIsOpen] = useState(initialValues.shouldOpen);
+  const [postAsMod, setPostAsMod] = useState(true);
   const shouldOpenFromQuery =
     searchParams.get("editor") === "open" ||
     searchParams.get("title")?.length ||
@@ -167,7 +171,10 @@ export function CreatePostForm({
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          asMod: isAdmin ? postAsMod : undefined,
+        }),
       });
 
       const result = await res.json();
@@ -287,6 +294,22 @@ export function CreatePostForm({
               </p>
             )}
           </Field>
+
+          {isAdmin && (
+            <Field>
+              <FieldLabel>Post as</FieldLabel>
+              <label className="inline-flex w-fit items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <Switch
+                  checked={postAsMod}
+                  onCheckedChange={setPostAsMod}
+                  aria-label="Post as moderator"
+                />
+                <span className={cn(postAsMod ? "text-primary" : "text-muted-foreground")}>
+                  {postAsMod ? "Posting as MOD" : "Posting as User"}
+                </span>
+              </label>
+            </Field>
+          )}
 
           <Field>
             <FieldLabel htmlFor="title">Title</FieldLabel>
