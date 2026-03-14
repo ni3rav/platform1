@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 
 const commentSchema = z.object({
   body: z.string().min(1, "Comment cannot be empty").max(5000),
@@ -21,6 +22,7 @@ interface CommentFormProps extends React.ComponentProps<"div"> {
   onCancel?: () => void;
   autoFocus?: boolean;
   placeholder?: string;
+  isAdmin?: boolean;
 }
 
 export function CommentForm({
@@ -30,11 +32,13 @@ export function CommentForm({
   onCancel,
   autoFocus = false,
   placeholder = "Share your thoughts…",
+  isAdmin = false,
   className,
   ...props
 }: CommentFormProps) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(!!parentId || autoFocus);
+  const [commentAsMod, setCommentAsMod] = useState(true);
 
   const {
     register,
@@ -55,6 +59,7 @@ export function CommentForm({
           postId,
           parentId: parentId || undefined,
           body: data.body,
+          asMod: isAdmin ? commentAsMod : undefined,
         }),
       });
 
@@ -113,25 +118,45 @@ export function CommentForm({
         {errors.body && (
           <p className="text-xs text-destructive">{errors.body.message}</p>
         )}
-        <div className="flex items-center justify-end gap-2">
-          {(parentId || onCancel) && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsExpanded(false);
-                reset();
-                onCancel?.();
-              }}
-            >
-              Cancel
-            </Button>
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            isAdmin ? "justify-between" : "justify-end",
           )}
-          <Button type="submit" size="sm" disabled={isSubmitting}>
-            {isSubmitting && <Spinner className="mr-1.5 size-3" />}
-            {isSubmitting ? "Posting…" : parentId ? "Reply" : "Comment"}
-          </Button>
+        >
+          {isAdmin && (
+            <label className="inline-flex w-fit items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-xs sm:text-sm">
+              <Switch
+                size="sm"
+                checked={commentAsMod}
+                onCheckedChange={setCommentAsMod}
+                aria-label="Comment as moderator"
+              />
+              <span className={cn(commentAsMod ? "text-primary" : "text-muted-foreground")}>
+                {commentAsMod ? "Commenting as MOD" : "Commenting as User"}
+              </span>
+            </label>
+          )}
+          <div className="flex items-center gap-2">
+            {(parentId || onCancel) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsExpanded(false);
+                  reset();
+                  onCancel?.();
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting && <Spinner className="mr-1.5 size-3" />}
+              {isSubmitting ? "Posting…" : parentId ? "Reply" : "Comment"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

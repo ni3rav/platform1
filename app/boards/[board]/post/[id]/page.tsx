@@ -170,7 +170,11 @@ export default async function PostDetailPage({ params }: PageProps) {
           <h2 className="text-sm font-semibold text-foreground">Comments</h2>
 
           {auth.isAuthenticated && (
-            <CommentForm postId={id} className="mb-2" />
+            <CommentForm
+              postId={id}
+              isAdmin={auth.role === "admin"}
+              className="mb-2"
+            />
           )}
 
           {!auth.isAuthenticated && (
