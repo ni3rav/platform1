@@ -87,6 +87,7 @@ export const voteRoutes = new Elysia({ prefix: "/votes" })
       );
 
       if (error || !result) {
+        console.error(error);
         set.status = 500;
         return { error: "Failed to vote" };
       }
