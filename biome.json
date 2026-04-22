@@ -1,0 +1,28 @@
+{
+  "$schema": "https://biomejs.dev",
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["src/**/*.js", "src/**/*.ts", "src/**/*.tsx", "src/**/*.jsx"]
+  },
+  "overrides": [
+    {
+      "includes": [".next/**/*", "node_modules/**/*", "public/**/*"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false }
+    }
+  ]
+}
