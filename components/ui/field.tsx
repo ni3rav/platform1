@@ -71,6 +71,7 @@ function Field({
       role="group"
       data-slot="field"
       data-orientation={orientation}
+      suppressHydrationWarning
       className={cn(fieldVariants({ orientation }), className)}
       {...props}
     />

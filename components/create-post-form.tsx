@@ -5,7 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { toast } from "sonner";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,6 @@ export function CreatePostForm({
   ...props
 }: CreatePostFormProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const initialValues = useMemo(() => {
@@ -117,7 +116,11 @@ export function CreatePostForm({
       body: string;
       board: string;
     }) => {
-      const params = new URLSearchParams(searchParams.toString());
+      if (typeof window === "undefined") return;
+
+      // Read current URL directly so we don't depend on `searchParams`
+      // (which our own writes intentionally don't update).
+      const params = new URLSearchParams(window.location.search);
       const shouldPersistBoardInQuery = !defaultBoard;
 
       if (shouldPersistBoardInQuery && board) {
@@ -138,13 +141,19 @@ export function CreatePostForm({
         params.delete("body");
       }
 
-      const current = searchParams.toString();
+      const current = window.location.search.replace(/^\?/, "");
       const next = params.toString();
-      if (current !== next) {
-        router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-      }
+      if (current === next) return;
+
+      // replaceState updates the URL without a Next.js navigation/server
+      // round-trip. The URL still survives reloads and sharing, which is all
+      // the draft-persistence logic needs.
+      const url = next
+        ? `${window.location.pathname}?${next}`
+        : window.location.pathname;
+      window.history.replaceState(null, "", url);
     },
-    [defaultBoard, pathname, router, searchParams],
+    [defaultBoard],
   );
 
   useEffect(() => {
@@ -157,7 +166,7 @@ export function CreatePostForm({
         body: bodyValue,
         board: defaultBoard || boardValue || "",
       });
-    }, 250);
+    }, 500);
 
     return () => window.clearTimeout(timer);
   }, [isOpen, titleValue, bodyValue, boardValue, defaultBoard, syncComposerQuery]);
