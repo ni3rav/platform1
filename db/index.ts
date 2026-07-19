@@ -11,9 +11,8 @@ import * as reportsSchema from "./schema/reports";
 // /api/reports. neon-http is stateless and throws "No transactions support
 // in neon-http driver" the moment a transaction starts.
 //
-// Bun (used via `bun run --bun next ...`) and Node.js >= 22 both expose a
-// global `WebSocket`, so no `ws` polyfill is needed here. If this ever runs
-// under an older Node runtime, install `ws` and set
+// Node.js >= 22 exposes a global `WebSocket`, so no `ws` polyfill is needed
+// here. If this ever runs under an older Node runtime, install `ws` and set
 // `neonConfig.webSocketConstructor = ws`.
 const pool = new Pool({ connectionString: env.DATABASE_URL });
 
