@@ -38,15 +38,29 @@ function buildOtpEmailHtml(email: string, otp: string): string {
 
 export async function sendOtpEmail(email: string, otp: string) {
   try {
-    await resend.emails.send({
-      from: 'noreply@emails.ni3rav.me',
+    const { data, error } = await resend.emails.send({
+      from: "noreply@emails.ni3rav.me",
       to: [email],
-      subject: 'Verify Your Email - OTP Code',
+      subject: "Verify Your Email - OTP Code",
       html: buildOtpEmailHtml(email, otp),
     });
 
+    if (error) {
+      console.error("Email sending error:", {
+        to: email,
+        name: error.name,
+        message: error.message,
+        statusCode: error.statusCode,
+      });
+      throw new Error("Failed to send email");
+    }
+
+    console.log("Email sent:", { to: email, id: data?.id });
     return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "Failed to send email") {
+      throw error;
+    }
     console.error("Email sending error:", error);
     throw new Error("Failed to send email");
   }

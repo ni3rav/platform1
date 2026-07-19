@@ -1,0 +1,10 @@
+allowBuilds:
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
+minimumReleaseAgeExclude:
+  - esbuild@0.24.3
+  - postcss@8.5.10
+overrides:
+  esbuild@<=0.24.2: ^0.28.1
+  postcss@<8.5.10: ^8.5.10
