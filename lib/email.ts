@@ -39,7 +39,7 @@ function buildOtpEmailHtml(email: string, otp: string): string {
 export async function sendOtpEmail(email: string, otp: string) {
   try {
     const { data, error } = await resend.emails.send({
-      from: "noreply@emails.ni3rav.me",
+      from: "noreply@niravv.me",
       to: [email],
       subject: "Verify Your Email - OTP Code",
       html: buildOtpEmailHtml(email, otp),
